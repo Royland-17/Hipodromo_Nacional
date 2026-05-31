@@ -1,0 +1,6 @@
+@Hipodromo_Nacional_HostAddress = http://localhost:5019
+
+GET {{Hipodromo_Nacional_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
