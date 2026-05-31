@@ -1,0 +1,25 @@
+﻿using System;
+using System.Collections.Generic;
+
+namespace Hipodromo_Nacional.Models;
+
+public partial class BitTrnQ42027
+{
+    public long IdBitacora { get; set; }
+
+    public int? IdRegistro { get; set; }
+
+    public string UsuarioBd { get; set; } = null!;
+
+    public string Accion { get; set; } = null!;
+
+    public DateTime FechaRegistro { get; set; }
+
+    public int? IdFactura { get; set; }
+
+    public int? IdMetodoPago { get; set; }
+
+    public decimal? Monto { get; set; }
+
+    public string? Referencia { get; set; }
+}
