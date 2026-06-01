@@ -1,0 +1,79 @@
+@model Hipodromo_Nacional.ViewModels.HistorialVetViewModel
+@{
+    ViewData["Title"] = "Nueva Revisión Veterinaria";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card-hipodromo">
+            <div class="card-header-custom">
+                <h5><i class="fas fa-stethoscope me-2"></i>Registrar Revisión Veterinaria</h5>
+                <a href="@Url.Action("Index")" class="btn-outline-gold">
+                    <i class="fas fa-arrow-left me-1"></i> Volver
+                </a>
+            </div>
+            <div class="card-body-custom">
+                <form asp-action="Crear" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label class="form-label-custom">Caballo *</label>
+                            <select asp-for="IdCaballo" asp-items="Model.Caballos" class="form-select-custom">
+                                <option value="">Seleccionar caballo...</option>
+                            </select>
+                            <span asp-validation-for="IdCaballo" class="text-danger-custom"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-custom">Veterinario *</label>
+                            <select asp-for="IdVeterinario" asp-items="Model.Veterinarios" class="form-select-custom">
+                                <option value="">Seleccionar veterinario...</option>
+                            </select>
+                            <span asp-validation-for="IdVeterinario" class="text-danger-custom"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-custom">Fecha de Revisión *</label>
+                            <input asp-for="FechaRevision" type="datetime-local" class="form-control-custom" />
+                            <span asp-validation-for="FechaRevision" class="text-danger-custom"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-custom">Certificación Vinculada</label>
+                            <select asp-for="IdCertificacion" asp-items="Model.Certificaciones" class="form-select-custom">
+                                <option value="">Ninguna (opcional)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label-custom">Diagnóstico *</label>
+                            <textarea asp-for="Diagnostico" class="form-control-custom" rows="3"
+                                      placeholder="Describe el diagnóstico clínico..."></textarea>
+                            <span asp-validation-for="Diagnostico" class="text-danger-custom"></span>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label-custom">Tratamiento</label>
+                            <textarea asp-for="Tratamiento" class="form-control-custom" rows="2"
+                                      placeholder="Medicamentos, dosis, procedimientos..."></textarea>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label-custom">Observaciones</label>
+                            <textarea asp-for="Observaciones" class="form-control-custom" rows="2"
+                                      placeholder="Notas adicionales..."></textarea>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label-custom">Próximo Control</label>
+                            <input asp-for="ProximoControl" type="date" class="form-control-custom" />
+                        </div>
+                        <div class="col-12 d-flex justify-content-end gap-3 pt-2">
+                            <a href="@Url.Action("Index")" class="btn-outline-gold py-2 px-4 text-decoration-none">Cancelar</a>
+                            <button type="submit" class="btn-gold py-2 px-4">
+                                <i class="fas fa-save me-2"></i> Guardar Revisión
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

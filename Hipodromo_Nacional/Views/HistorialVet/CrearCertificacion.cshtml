@@ -1,0 +1,74 @@
+@model Hipodromo_Nacional.ViewModels.CertificacionViewModel
+@{
+    ViewData["Title"] = "Nueva Certificación Sanitaria";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card-hipodromo">
+            <div class="card-header-custom">
+                <h5><i class="fas fa-certificate me-2"></i>Registrar Certificación Sanitaria</h5>
+                <a href="@Url.Action("Certificaciones")" class="btn-outline-gold">
+                    <i class="fas fa-arrow-left me-1"></i> Volver
+                </a>
+            </div>
+            <div class="card-body-custom">
+                <form asp-action="CrearCertificacion" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="row g-4">
+                        <div class="col-md-8">
+                            <label class="form-label-custom">N° Certificado *</label>
+                            <input asp-for="NumeroCertificado" class="form-control-custom" placeholder="CERT-2026-001" />
+                            <span asp-validation-for="NumeroCertificado" class="text-danger-custom"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label-custom">Estado *</label>
+                            <select asp-for="IdEstadoCertificacion" asp-items="Model.EstadosCertificacion" class="form-select-custom">
+                                <option value="">Seleccionar...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-custom">Caballo *</label>
+                            <select asp-for="IdCaballo" asp-items="Model.Caballos" class="form-select-custom">
+                                <option value="">Seleccionar caballo...</option>
+                            </select>
+                            <span asp-validation-for="IdCaballo" class="text-danger-custom"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-custom">Veterinario *</label>
+                            <select asp-for="IdVeterinario" asp-items="Model.Veterinarios" class="form-select-custom">
+                                <option value="">Seleccionar veterinario...</option>
+                            </select>
+                            <span asp-validation-for="IdVeterinario" class="text-danger-custom"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-custom">Fecha de Emisión *</label>
+                            <input asp-for="FechaEmision" type="date" class="form-control-custom" />
+                            <span asp-validation-for="FechaEmision" class="text-danger-custom"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-custom">Fecha de Vencimiento *</label>
+                            <input asp-for="FechaVencimiento" type="date" class="form-control-custom" />
+                            <span asp-validation-for="FechaVencimiento" class="text-danger-custom"></span>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label-custom">Observaciones</label>
+                            <textarea asp-for="Observaciones" class="form-control-custom" rows="3"
+                                      placeholder="Condiciones especiales, restricciones..."></textarea>
+                        </div>
+                        <div class="col-12 d-flex justify-content-end gap-3 pt-2">
+                            <a href="@Url.Action("Certificaciones")" class="btn-outline-gold py-2 px-4 text-decoration-none">Cancelar</a>
+                            <button type="submit" class="btn-gold py-2 px-4">
+                                <i class="fas fa-save me-2"></i> Emitir Certificación
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

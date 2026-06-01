@@ -1,0 +1,85 @@
+@model Hipodromo_Nacional.ViewModels.CaballoViewModel
+@{
+    ViewData["Title"] = "Editar Caballo";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card-hipodromo">
+            <div class="card-header-custom">
+                <h5><i class="fas fa-pen me-2"></i>Editar Caballo — @Model.Nombre</h5>
+                <a href="@Url.Action("Index")" class="btn-outline-gold">
+                    <i class="fas fa-arrow-left me-1"></i> Volver
+                </a>
+            </div>
+            <div class="card-body-custom">
+                <form asp-action="Editar" asp-route-id="@Model.IdCaballo" method="post">
+                    @Html.AntiForgeryToken()
+
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <label class="form-label-custom">Código *</label>
+                            <input asp-for="Codigo" class="form-control-custom" />
+                            <span asp-validation-for="Codigo" class="text-danger-custom"></span>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label-custom">Nombre *</label>
+                            <input asp-for="Nombre" class="form-control-custom" />
+                            <span asp-validation-for="Nombre" class="text-danger-custom"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label-custom">Fecha de Nacimiento *</label>
+                            <input asp-for="FechaNacimiento" type="date" class="form-control-custom" />
+                            <span asp-validation-for="FechaNacimiento" class="text-danger-custom"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label-custom">Peso (kg) *</label>
+                            <input asp-for="PesoKg" type="number" step="0.1" class="form-control-custom" />
+                            <span asp-validation-for="PesoKg" class="text-danger-custom"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label-custom">Sexo *</label>
+                            <select asp-for="IdSexo" asp-items="Model.Sexos" class="form-select-custom">
+                                <option value="">Seleccionar...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-custom">Raza *</label>
+                            <select asp-for="IdRaza" asp-items="Model.Razas" class="form-select-custom">
+                                <option value="">Seleccionar...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-custom">Estado de Salud *</label>
+                            <select asp-for="IdEstadoSalud" asp-items="Model.EstadosSalud" class="form-select-custom">
+                                <option value="">Seleccionar...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label-custom">Propietario *</label>
+                            <select asp-for="IdPropietario" asp-items="Model.Propietarios" class="form-select-custom">
+                                <option value="">Seleccionar...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center gap-3 p-3" style="background:var(--bg-dark);border-radius:8px;border:1px solid var(--border)">
+                                <input asp-for="Activo" type="checkbox" class="form-check-input" style="width:20px;height:20px;accent-color:var(--gold)" />
+                                <label class="form-label-custom mb-0">Caballo activo en el sistema</label>
+                            </div>
+                        </div>
+                        <div class="col-12 d-flex justify-content-end gap-3 pt-2">
+                            <a href="@Url.Action("Index")" class="btn-outline-gold py-2 px-4 text-decoration-none">Cancelar</a>
+                            <button type="submit" class="btn-gold py-2 px-4">
+                                <i class="fas fa-save me-2"></i> Actualizar Caballo
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

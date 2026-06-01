@@ -1,0 +1,92 @@
+@model List<Hipodromo_Nacional.ViewModels.CaballoListaViewModel>
+@{
+    ViewData["Title"] = "Gestión de Caballos";
+}
+
+<div class="card-hipodromo">
+    <div class="card-header-custom">
+        <h5><i class="fas fa-horse me-2"></i>Registro de Caballos</h5>
+        <a href="@Url.Action("Crear")" class="btn-gold">
+            <i class="fas fa-plus me-1"></i> Nuevo Caballo
+        </a>
+    </div>
+    <div class="card-body-custom p-0">
+        @if (!Model.Any())
+        {
+            <div class="text-center py-5" style="color:var(--text-muted)">
+                <i class="fas fa-horse" style="font-size:3rem;opacity:.3"></i>
+                <p class="mt-3">No hay caballos registrados aún.</p>
+            </div>
+        }
+        else
+        {
+            <div style="overflow-x:auto">
+                <table class="table-hipodromo">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Nombre</th>
+                            <th>Edad</th>
+                            <th>Peso (kg)</th>
+                            <th>Sexo</th>
+                            <th>Raza</th>
+                            <th>Estado Salud</th>
+                            <th>Propietario</th>
+                            <th>Cert.</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var c in Model)
+                        {
+                            <tr>
+                                <td><span style="color:var(--gold);font-weight:600">@c.Codigo</span></td>
+                                <td style="font-weight:500">@c.Nombre</td>
+                                <td>@(c.EdadAnios.HasValue ? c.EdadAnios + " años" : "—")</td>
+                                <td>@(c.PesoKg.HasValue ? c.PesoKg?.ToString("F1") : "—")</td>
+                                <td>@(c.Sexo ?? "—")</td>
+                                <td>@(c.Raza ?? "—")</td>
+                                <td>
+                                    @{
+                                        var estadoClass = c.EstadoSalud?.ToLower() switch {
+                                            var s when s?.Contains("sano") == true || s?.Contains("bueno") == true => "badge-ok",
+                                            var s when s?.Contains("tratamiento") == true || s?.Contains("observac") == true => "badge-warn",
+                                            var s when s?.Contains("critico") == true || s?.Contains("enfermo") == true => "badge-danger",
+                                            _ => "badge-info"
+                                        };
+                                    }
+                                    <span class="badge-salud @estadoClass">@(c.EstadoSalud ?? "—")</span>
+                                </td>
+                                <td>@(c.Propietario ?? "—")</td>
+                                <td>
+                                    @if (c.CertVigente == true)
+                                    {
+                                        <i class="fas fa-circle-check cert-vigente" title="Certificación vigente"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="fas fa-circle-xmark cert-vencida" title="Sin certificación vigente"></i>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-2">
+                                        <a href="@Url.Action("Editar", new { id = c.IdCaballo })" class="btn-outline-gold">
+                                            <i class="fas fa-pen"></i>
+                                        </a>
+                                        <form method="post" action="@Url.Action("Desactivar", new { id = c.IdCaballo })" style="display:inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn-outline-danger-custom"
+                                                    onclick="return confirm('¿Desactivar este caballo?')">
+                                                <i class="fas fa-ban"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

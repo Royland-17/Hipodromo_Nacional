@@ -1,0 +1,66 @@
+@model List<Hipodromo_Nacional.ViewModels.CertificacionViewModel>
+@{
+    ViewData["Title"] = "Certificaciones Sanitarias";
+}
+
+<div class="card-hipodromo">
+    <div class="card-header-custom">
+        <h5><i class="fas fa-certificate me-2"></i>Certificaciones Sanitarias</h5>
+        <div class="d-flex gap-2">
+            <a href="@Url.Action("Index")" class="btn-outline-gold">
+                <i class="fas fa-stethoscope me-1"></i> Historial
+            </a>
+            <a href="@Url.Action("CrearCertificacion")" class="btn-gold">
+                <i class="fas fa-plus me-1"></i> Nueva Certificación
+            </a>
+        </div>
+    </div>
+    <div class="card-body-custom p-0">
+        @if (!Model.Any())
+        {
+            <div class="text-center py-5" style="color:var(--text-muted)">
+                <i class="fas fa-certificate" style="font-size:3rem;opacity:.3"></i>
+                <p class="mt-3">No hay certificaciones registradas.</p>
+            </div>
+        }
+        else
+        {
+            <table class="table-hipodromo">
+                <thead>
+                    <tr>
+                        <th>N° Certificado</th>
+                        <th>Caballo</th>
+                        <th>Veterinario</th>
+                        <th>Emisión</th>
+                        <th>Vencimiento</th>
+                        <th>Estado</th>
+                        <th>Observaciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in Model)
+                    {
+                        var vencido = c.FechaVencimiento < DateOnly.FromDateTime(DateTime.Today);
+                        <tr>
+                            <td style="color:var(--gold);font-weight:600">@c.NumeroCertificado</td>
+                            <td style="font-weight:500">@c.NombreCaballo</td>
+                            <td style="color:var(--text-muted)">@c.NombreVeterinario</td>
+                            <td>@c.FechaEmision.ToString("dd/MM/yyyy")</td>
+                            <td>
+                                <span class="badge-salud @(vencido ? "badge-danger" : "badge-ok")">
+                                    @c.FechaVencimiento.ToString("dd/MM/yyyy")
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge-salud @(vencido ? "badge-danger" : "badge-ok")">
+                                    @(vencido ? "Vencida" : "Vigente")
+                                </span>
+                            </td>
+                            <td style="color:var(--text-muted);font-size:.83rem">@(c.Observaciones ?? "—")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>

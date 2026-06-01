@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
+using Hipodromo_Nacional.Models;
 
-namespace Hipodromo_Nacional.Models;
+namespace Hipodromo_Nacional.Hipodromo.DA;
 
 public partial class PostgresContext : DbContext
 {
@@ -585,7 +586,7 @@ public partial class PostgresContext : DbContext
 
     public virtual DbSet<OauthConsent> OauthConsents { get; set; }
 
-    public virtual DbSet<Object> Objects { get; set; }
+    public virtual DbSet<Hipodromo_Nacional.Models.Object> Objects { get; set; }
 
     public virtual DbSet<OneTimeToken> OneTimeTokens { get; set; }
 
@@ -10769,7 +10770,7 @@ public partial class PostgresContext : DbContext
                 .HasConstraintName("oauth_consents_user_id_fkey");
         });
 
-        modelBuilder.Entity<Object>(entity =>
+        modelBuilder.Entity<Hipodromo_Nacional.Models.Object>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("objects_pkey");
 

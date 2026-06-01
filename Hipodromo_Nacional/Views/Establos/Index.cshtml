@@ -1,0 +1,68 @@
+@model List<Hipodromo_Nacional.ViewModels.EstabloViewModel>
+@{
+    ViewData["Title"] = "Gestión de Establos";
+}
+
+<div class="card-hipodromo">
+    <div class="card-header-custom">
+        <h5><i class="fas fa-warehouse me-2"></i>Registro de Establos</h5>
+        <a href="@Url.Action("Crear")" class="btn-gold">
+            <i class="fas fa-plus me-1"></i> Nuevo Establo
+        </a>
+    </div>
+    <div class="card-body-custom">
+        @if (!Model.Any())
+        {
+            <div class="text-center py-5" style="color:var(--text-muted)">
+                <i class="fas fa-warehouse" style="font-size:3rem;opacity:.3"></i>
+                <p class="mt-3">No hay establos registrados aún.</p>
+            </div>
+        }
+        else
+        {
+            <div class="row g-4">
+                @foreach (var e in Model)
+                {
+                    var pct = e.Capacidad > 0 ? (int)((double)e.CaballosAsignados / e.Capacidad * 100) : 0;
+                    var barColor = pct >= 90 ? "#f87171" : pct >= 70 ? "#facc15" : "var(--gold)";
+
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card-hipodromo h-100" style="transition:transform .2s" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform='translateY(0)'">
+                            <div style="padding:20px">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div>
+                                        <span style="color:var(--gold);font-size:.75rem;font-weight:600;letter-spacing:1px">@e.Codigo</span>
+                                        <h6 style="margin:4px 0 0;font-size:1rem;font-weight:600">@e.Nombre</h6>
+                                    </div>
+                                    <span class="badge-salud @(e.IdEstadoEstablo == 1 ? "badge-ok" : "badge-warn")">
+                                        @(e.IdEstadoEstablo == 1 ? "Activo" : "Inactivo")
+                                    </span>
+                                </div>
+                                <div style="color:var(--text-muted);font-size:.82rem;margin-bottom:16px">
+                                    <i class="fas fa-location-dot me-1"></i> @e.Ubicacion
+                                </div>
+                                <div style="font-size:.82rem;color:var(--text-muted);margin-bottom:6px">
+                                    Ocupación: <strong style="color:var(--text-primary)">@e.CaballosAsignados / @e.Capacidad</strong> caballos
+                                    <span style="color:@(e.EspaciosDisponibles > 0 ? "#4ade80" : "#f87171");margin-left:8px">
+                                        @(e.EspaciosDisponibles > 0 ? e.EspaciosDisponibles + " libres" : "Lleno")
+                                    </span>
+                                </div>
+                                <div class="capacity-bar">
+                                    <div class="capacity-fill" style="width:@pct%;background:@barColor"></div>
+                                </div>
+                                <div class="d-flex gap-2 mt-4">
+                                    <a href="@Url.Action("Editar", new { id = e.IdEstablo })" class="btn-outline-gold flex-fill text-center text-decoration-none py-2">
+                                        <i class="fas fa-pen me-1"></i> Editar
+                                    </a>
+                                    <a href="@Url.Action("Index","Asignaciones")" class="btn-gold flex-fill text-center text-decoration-none py-2">
+                                        <i class="fas fa-link me-1"></i> Asignaciones
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>

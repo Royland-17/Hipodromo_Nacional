@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Hipodromo_Nacional.Hipodromo.DA;
 using Hipodromo_Nacional.Models;
 
 namespace Hipodromo_Nacional.Controllers

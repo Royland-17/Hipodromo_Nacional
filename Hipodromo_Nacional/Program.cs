@@ -1,21 +1,21 @@
 using Microsoft.EntityFrameworkCore;
+using Hipodromo_Nacional.Hipodromo.DA;
+using Hipodromo_Nacional.Hipodromo.BL;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // ==========================================
-// 1. CONFIGURACIÓN DE SERVICIOS (DI CONTAINER)
+// 1. SERVICIOS
 // ==========================================
 
-builder.Services.AddControllers();
+builder.Services.AddControllersWithViews();
 
-// Configuración de la conexión a Supabase con PostgreSQL
 var connectionString = builder.Configuration.GetConnectionString("SupabaseConnection");
-builder.Services.AddDbContext<Hipodromo_Nacional.Models.PostgresContext>(options =>
+builder.Services.AddDbContext<PostgresContext>(options =>
     options.UseNpgsql(connectionString));
 
-// Configuración de OpenAPI (Swagger / Documentación)
-builder.Services.AddOpenApi();
-
+builder.Services.AddScoped<CaballoService>();
+builder.Services.AddScoped<EstabloService>();
 
 // ==========================================
 // 2. CONSTRUCCIÓN DE LA APLICACIÓN
@@ -23,25 +23,23 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-
 // ==========================================
-// 3. CONFIGURACIÓN DEL PIPELINE DE PETICIONES (MIDDLEWARE)
+// 3. PIPELINE
 // ==========================================
 
-// Configurar el pipeline para el entorno de desarrollo
-if (app.Environment.IsDevelopment())
+if (!app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseExceptionHandler("/Home/Error");
+    app.UseHsts();
 }
 
 app.UseHttpsRedirection();
-
+app.UseStaticFiles();
+app.UseRouting();
 app.UseAuthorization();
 
-app.MapControllers();
-
-// ==========================================
-// 4. EJECUCIÓN DE LA APLICACIÓN
-// ==========================================
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
