@@ -9,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 // ==========================================
 
 builder.Services.AddControllersWithViews();
+builder.Services.AddMemoryCache();
 
 var connectionString = builder.Configuration.GetConnectionString("SupabaseConnection");
 builder.Services.AddDbContext<PostgresContext>(options =>
@@ -16,6 +17,7 @@ builder.Services.AddDbContext<PostgresContext>(options =>
 
 builder.Services.AddScoped<CaballoService>();
 builder.Services.AddScoped<EstabloService>();
+builder.Services.AddScoped<PropietarioService>();
 
 // ==========================================
 // 2. CONSTRUCCIÓN DE LA APLICACIÓN

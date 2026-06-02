@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="Hipodromo_Nacional/Hipodromo_Nacional.csproj" />
+  <Project Path="Hipodromo_Nacional.LogicaDeNegocios/Hipodromo_Nacional.LogicaDeNegocios.csproj" />
 </Solution>

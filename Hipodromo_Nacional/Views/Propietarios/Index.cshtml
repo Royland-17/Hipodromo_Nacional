@@ -1,0 +1,101 @@
+@model IEnumerable<Hipodromo_Nacional.Models.Propietario>
+@{
+    ViewData["Title"] = "Propietarios";
+    var seBusco = (bool?)ViewBag.SeBusco ?? false;
+    var identificacionBusqueda = (string?)ViewBag.Identificacion;
+}
+
+<div class="card-hipodromo">
+    <div class="card-header-custom">
+        <h5><i class="fas fa-user-tie me-2"></i>Propietarios</h5>
+        <a asp-action="Crear" class="btn-gold">
+            <i class="fas fa-plus me-1"></i> Nuevo Propietario
+        </a>
+    </div>
+    <div class="card-body-custom">
+        <form asp-action="Index" method="get" class="mb-3">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <label for="identificacion" class="form-label">Buscar por número de identificación</label>
+                    <input type="text" id="identificacion" name="identificacion" value="@identificacionBusqueda" class="form-control" placeholder="Ej: 1-2345-6789" />
+                </div>
+                <div class="col-md-8 d-flex gap-2">
+                    <button type="submit" class="btn-gold"><i class="fas fa-magnifying-glass me-1"></i>Buscar</button>
+                    <a asp-action="Index" class="btn-outline-gold">Limpiar</a>
+                </div>
+            </div>
+        </form>
+
+        @if (!seBusco)
+        {
+            <p style="color:var(--text-muted)">Ingrese una identificación para consultar un propietario específico.</p>
+        }
+
+        @if (Model.Any())
+        {
+            <div style="overflow-x:auto">
+                <table class="table-hipodromo">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Identificación</th>
+                            <th>Nombre completo</th>
+                            <th>Usuario</th>
+                            <th>País</th>
+                            <th>Provincia</th>
+                            <th>Cantón</th>
+                            <th>Distrito</th>
+                            <th>Barrio</th>
+                            <th>Activo</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var p in Model)
+                        {
+                            var u = p.IdUsuarioNavigation;
+                            var b = p.IdBarrioNavigation;
+                            var dis = b?.IdDistritoNavigation;
+                            var can = dis?.IdCantonNavigation;
+                            var pro = can?.IdProvinciaNavigation;
+                            var pai = pro?.IdPaisNavigation;
+                            <tr>
+                                <td>@p.IdPropietario</td>
+                                <td>@u?.Identificacion</td>
+                                <td>@u?.Nombre @u?.Apellido1 @u?.Apellido2</td>
+                                <td>@u?.Usuario1</td>
+                                <td>@pai?.Nombre</td>
+                                <td>@pro?.Nombre</td>
+                                <td>@can?.Nombre</td>
+                                <td>@dis?.Nombre</td>
+                                <td>@b?.Nombre</td>
+                                <td>
+                                    @if (u?.Activo == true)
+                                    {
+                                        <span class="badge-salud badge-ok">Sí</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-salud badge-info">No</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-2">
+                                        <a asp-action="Detalles" asp-route-id="@p.IdPropietario" class="btn-outline-gold"><i class="fas fa-eye"></i></a>
+                                        <a asp-action="Editar" asp-route-id="@p.IdPropietario" class="btn-outline-gold"><i class="fas fa-pen"></i></a>
+                                        <a asp-action="Desactivar" asp-route-id="@p.IdPropietario" class="btn-outline-danger-custom"><i class="fas fa-ban"></i></a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        @if (seBusco && !Model.Any())
+        {
+            <p style="color:var(--text-muted)">No se encontró un propietario con esa identificación.</p>
+        }
+    </div>
+</div>

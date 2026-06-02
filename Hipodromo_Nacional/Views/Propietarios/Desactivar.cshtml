@@ -1,0 +1,47 @@
+@model Hipodromo_Nacional.Models.Propietario
+@{
+    ViewData["Title"] = "Desactivar Propietario";
+    var u = Model.IdUsuarioNavigation;
+    var b = Model.IdBarrioNavigation;
+    var dis = b?.IdDistritoNavigation;
+    var can = dis?.IdCantonNavigation;
+    var pro = can?.IdProvinciaNavigation;
+    var pai = pro?.IdPaisNavigation;
+}
+
+<div class="card-hipodromo">
+    <div class="card-header-custom">
+        <h5><i class="fas fa-user-slash me-2"></i>Desactivar Propietario</h5>
+    </div>
+    <div class="card-body-custom">
+        <div class="alert-custom" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#f87171;margin-bottom:20px">
+            ¿Está seguro de que desea desactivar este propietario? Esta acción también desactiva el usuario asociado.
+        </div>
+
+        <dl class="row">
+            <dt class="col-sm-3">Nombre completo</dt>
+            <dd class="col-sm-9">@u?.Nombre @u?.Apellido1 @u?.Apellido2</dd>
+
+            <dt class="col-sm-3">Identificación</dt>
+            <dd class="col-sm-9">@u?.Identificacion</dd>
+
+            <dt class="col-sm-3">Usuario</dt>
+            <dd class="col-sm-9">@u?.Usuario1</dd>
+
+            <dt class="col-sm-3">Dirección</dt>
+            <dd class="col-sm-9">@pai?.Nombre / @pro?.Nombre / @can?.Nombre / @dis?.Nombre / @b?.Nombre</dd>
+
+            <dt class="col-sm-3">Dirección exacta</dt>
+            <dd class="col-sm-9">@(Model.DireccionExacta ?? "-")</dd>
+        </dl>
+
+        <form asp-action="Desactivar" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model.IdPropietario" />
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn-outline-danger-custom">Confirmar desactivación</button>
+                <a asp-action="Index" class="btn-outline-gold">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>

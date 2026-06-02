@@ -1,0 +1,266 @@
+@model Hipodromo_Nacional.ViewModels.PropietarioViewModel
+@{
+    ViewData["Title"] = "Nuevo Propietario";
+}
+
+<div class="card-hipodromo">
+    <div class="card-header-custom">
+        <h5><i class="fas fa-user-plus me-2"></i>Nuevo Propietario</h5>
+    </div>
+    <div class="card-body-custom">
+        <form asp-action="Crear" method="post" id="createPropietarioForm">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <h5 class="mb-3">Datos de acceso</h5>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label asp-for="Usuario" class="form-label"></label>
+                    <input asp-for="Usuario" class="form-control" />
+                    <span asp-validation-for="Usuario" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Contrasena" class="form-label"></label>
+                    <input asp-for="Contrasena" class="form-control" type="password" />
+                    <span asp-validation-for="Contrasena" class="text-danger"></span>
+                </div>
+            </div>
+
+            <h5 class="mb-3">Datos personales</h5>
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label asp-for="Identificacion" class="form-label"></label>
+                    <input asp-for="Identificacion" class="form-control" />
+                    <span asp-validation-for="Identificacion" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Nombre" class="form-label"></label>
+                    <input asp-for="Nombre" class="form-control" />
+                    <span asp-validation-for="Nombre" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Apellido1" class="form-label"></label>
+                    <input asp-for="Apellido1" class="form-control" />
+                    <span asp-validation-for="Apellido1" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label asp-for="Apellido2" class="form-label"></label>
+                    <input asp-for="Apellido2" class="form-control" />
+                    <span asp-validation-for="Apellido2" class="text-danger"></span>
+                </div>
+            </div>
+
+            <h5 class="mb-3">Dirección</h5>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label asp-for="IdPais" class="form-label"></label>
+                    <select asp-for="IdPais" asp-items="Model.Paises" class="form-select" id="selPais">
+                    </select>
+                    <span asp-validation-for="IdPais" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="IdProvincia" class="form-label"></label>
+                    <select asp-for="IdProvincia" class="form-select" id="selProvincia">
+                        <option value="">-- Seleccione país primero --</option>
+                    </select>
+                    <span asp-validation-for="IdProvincia" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label asp-for="IdCanton" class="form-label"></label>
+                    <select asp-for="IdCanton" class="form-select" id="selCanton">
+                        <option value="">-- Seleccione provincia primero --</option>
+                    </select>
+                    <span asp-validation-for="IdCanton" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="IdDistrito" class="form-label"></label>
+                    <select asp-for="IdDistrito" class="form-select" id="selDistrito">
+                        <option value="">-- Seleccione cantón primero --</option>
+                    </select>
+                    <span asp-validation-for="IdDistrito" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="IdBarrio" class="form-label"></label>
+                    <select asp-for="IdBarrio" class="form-select" id="selBarrio">
+                        <option value="">-- Seleccione distrito primero --</option>
+                    </select>
+                    <span asp-validation-for="IdBarrio" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label asp-for="DireccionExacta" class="form-label"></label>
+                <textarea asp-for="DireccionExacta" class="form-control" rows="2"></textarea>
+                <span asp-validation-for="DireccionExacta" class="text-danger"></span>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn-gold" id="btnGuardarPropietario">Guardar</button>
+                <a asp-action="Index" class="btn-outline-gold">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        (() => {
+            const urls = {
+                provincias: '@Url.Action("ObtenerProvincias", "Propietarios")',
+                cantones: '@Url.Action("ObtenerCantones", "Propietarios")',
+                distritos: '@Url.Action("ObtenerDistritos", "Propietarios")',
+                barrios: '@Url.Action("ObtenerBarrios", "Propietarios")'
+            };
+
+            const selPais = document.getElementById('selPais');
+            const selProvincia = document.getElementById('selProvincia');
+            const selCanton = document.getElementById('selCanton');
+            const selDistrito = document.getElementById('selDistrito');
+            const selBarrio = document.getElementById('selBarrio');
+            const form = document.getElementById('createPropietarioForm');
+            const btnGuardar = document.getElementById('btnGuardarPropietario');
+
+            function resetSelect(select, placeholder) {
+                select.innerHTML = '';
+                select.add(new Option(placeholder, ''));
+            }
+
+            async function fetchItems(url, key, value) {
+                if (!value) return [];
+
+                async function run(timeoutMs) {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+                    try {
+                        const response = await fetch(`${url}?${key}=${encodeURIComponent(value)}`, {
+                            method: 'GET',
+                            headers: { 'Accept': 'application/json' },
+                            cache: 'no-store',
+                            signal: controller.signal
+                        });
+
+                        if (!response.ok) return null;
+                        return await response.json();
+                    } catch {
+                        return null;
+                    } finally {
+                        clearTimeout(timeoutId);
+                    }
+                }
+
+                const firstAttempt = await run(12000);
+                if (Array.isArray(firstAttempt)) return firstAttempt;
+
+                const secondAttempt = await run(25000);
+                if (Array.isArray(secondAttempt)) return secondAttempt;
+
+                return [];
+            }
+
+            function fillSelect(select, placeholder, items) {
+                resetSelect(select, placeholder);
+                for (const item of items) {
+                    select.add(new Option(item.text, item.value));
+                }
+            }
+
+            function tryAutoSelectSingle(select) {
+                const validOptions = Array.from(select.options).filter(option => option.value);
+                if (validOptions.length === 1) {
+                    select.value = validOptions[0].value;
+                    return true;
+                }
+
+                return false;
+            }
+
+            async function onPaisChanged(autoAdvance = false) {
+                const items = await fetchItems(urls.provincias, 'idPais', selPais.value);
+                fillSelect(
+                    selProvincia,
+                    items.length > 0 ? '-- Seleccione --' : '-- No hay provincias disponibles --',
+                    items
+                );
+                resetSelect(selCanton, '-- Seleccione provincia primero --');
+                resetSelect(selDistrito, '-- Seleccione cantón primero --');
+                resetSelect(selBarrio, '-- Seleccione distrito primero --');
+
+                if (autoAdvance && tryAutoSelectSingle(selProvincia)) {
+                    await onProvinciaChanged(true);
+                }
+            }
+
+            async function onProvinciaChanged(autoAdvance = false) {
+                const items = await fetchItems(urls.cantones, 'idProvincia', selProvincia.value);
+                fillSelect(
+                    selCanton,
+                    items.length > 0 ? '-- Seleccione --' : '-- No hay cantones disponibles --',
+                    items
+                );
+                resetSelect(selDistrito, '-- Seleccione cantón primero --');
+                resetSelect(selBarrio, '-- Seleccione distrito primero --');
+
+                if (autoAdvance && tryAutoSelectSingle(selCanton)) {
+                    await onCantonChanged(true);
+                }
+            }
+
+            async function onCantonChanged(autoAdvance = false) {
+                const items = await fetchItems(urls.distritos, 'idCanton', selCanton.value);
+                fillSelect(
+                    selDistrito,
+                    items.length > 0 ? '-- Seleccione --' : '-- No hay distritos disponibles --',
+                    items
+                );
+                resetSelect(selBarrio, '-- Seleccione distrito primero --');
+
+                if (autoAdvance && tryAutoSelectSingle(selDistrito)) {
+                    await onDistritoChanged(true);
+                }
+            }
+
+            async function onDistritoChanged(autoAdvance = false) {
+                const items = await fetchItems(urls.barrios, 'idDistrito', selDistrito.value);
+                fillSelect(
+                    selBarrio,
+                    items.length > 0 ? '-- Seleccione --' : '-- No hay barrios disponibles --',
+                    items
+                );
+
+                if (autoAdvance) {
+                    tryAutoSelectSingle(selBarrio);
+                }
+            }
+
+            selPais.addEventListener('change', onPaisChanged);
+            selProvincia.addEventListener('change', onProvinciaChanged);
+            selCanton.addEventListener('change', onCantonChanged);
+            selDistrito.addEventListener('change', onDistritoChanged);
+
+            async function initializeForm() {
+                const validCountryOptions = Array.from(selPais.options).filter(option => option.value);
+                if (!selPais.value && validCountryOptions.length === 1) {
+                    selPais.value = validCountryOptions[0].value;
+                }
+
+                if (selPais.value) {
+                    await onPaisChanged(true);
+                }
+            }
+
+            form?.addEventListener('submit', () => {
+                if (!btnGuardar) return;
+
+                btnGuardar.disabled = true;
+                btnGuardar.textContent = 'Guardando...';
+            });
+
+            void initializeForm();
+        })();
+    </script>
+}
