@@ -18,6 +18,8 @@ builder.Services.AddDbContext<PostgresContext>(options =>
 builder.Services.AddScoped<CaballoService>();
 builder.Services.AddScoped<EstabloService>();
 builder.Services.AddScoped<PropietarioService>();
+builder.Services.AddScoped<SuministroService>();
+builder.Services.AddScoped<AlimentacionService>();
 
 // ==========================================
 // 2. CONSTRUCCIÓN DE LA APLICACIÓN

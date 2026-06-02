@@ -3,105 +3,108 @@
     ViewData["Title"] = "Nuevo Propietario";
 }
 
+<div class="row justify-content-center">
+    <div class="col-xl-10">
 <div class="card-hipodromo">
     <div class="card-header-custom">
         <h5><i class="fas fa-user-plus me-2"></i>Nuevo Propietario</h5>
+        <a asp-action="Index" class="btn-outline-gold text-decoration-none">
+            <i class="fas fa-arrow-left me-1"></i> Volver
+        </a>
     </div>
     <div class="card-body-custom">
         <form asp-action="Crear" method="post" id="createPropietarioForm">
             @Html.AntiForgeryToken()
-            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+            <div asp-validation-summary="ModelOnly" class="text-danger-custom mb-3"></div>
 
-            <h5 class="mb-3">Datos de acceso</h5>
-            <div class="row mb-3">
+            <h5 class="section-title-custom">Datos de acceso</h5>
+            <div class="row g-4 mb-4">
                 <div class="col-md-6">
-                    <label asp-for="Usuario" class="form-label"></label>
-                    <input asp-for="Usuario" class="form-control" />
-                    <span asp-validation-for="Usuario" class="text-danger"></span>
+                    <label asp-for="Usuario" class="form-label-custom"></label>
+                    <input asp-for="Usuario" class="form-control-custom" />
+                    <span asp-validation-for="Usuario" class="text-danger-custom"></span>
                 </div>
                 <div class="col-md-6">
-                    <label asp-for="Contrasena" class="form-label"></label>
-                    <input asp-for="Contrasena" class="form-control" type="password" />
-                    <span asp-validation-for="Contrasena" class="text-danger"></span>
+                    <label asp-for="Contrasena" class="form-label-custom"></label>
+                    <input asp-for="Contrasena" class="form-control-custom" type="password" />
+                    <span asp-validation-for="Contrasena" class="text-danger-custom"></span>
                 </div>
             </div>
 
-            <h5 class="mb-3">Datos personales</h5>
-            <div class="row mb-3">
+            <h5 class="section-title-custom">Datos personales</h5>
+            <div class="row g-4 mb-4">
                 <div class="col-md-4">
-                    <label asp-for="Identificacion" class="form-label"></label>
-                    <input asp-for="Identificacion" class="form-control" />
-                    <span asp-validation-for="Identificacion" class="text-danger"></span>
+                    <label asp-for="Identificacion" class="form-label-custom"></label>
+                    <input asp-for="Identificacion" class="form-control-custom" />
+                    <span asp-validation-for="Identificacion" class="text-danger-custom"></span>
                 </div>
                 <div class="col-md-4">
-                    <label asp-for="Nombre" class="form-label"></label>
-                    <input asp-for="Nombre" class="form-control" />
-                    <span asp-validation-for="Nombre" class="text-danger"></span>
+                    <label asp-for="Nombre" class="form-label-custom"></label>
+                    <input asp-for="Nombre" class="form-control-custom" />
+                    <span asp-validation-for="Nombre" class="text-danger-custom"></span>
                 </div>
                 <div class="col-md-4">
-                    <label asp-for="Apellido1" class="form-label"></label>
-                    <input asp-for="Apellido1" class="form-control" />
-                    <span asp-validation-for="Apellido1" class="text-danger"></span>
+                    <label asp-for="Apellido1" class="form-label-custom"></label>
+                    <input asp-for="Apellido1" class="form-control-custom" />
+                    <span asp-validation-for="Apellido1" class="text-danger-custom"></span>
                 </div>
-            </div>
-            <div class="row mb-3">
                 <div class="col-md-4">
-                    <label asp-for="Apellido2" class="form-label"></label>
-                    <input asp-for="Apellido2" class="form-control" />
-                    <span asp-validation-for="Apellido2" class="text-danger"></span>
+                    <label asp-for="Apellido2" class="form-label-custom"></label>
+                    <input asp-for="Apellido2" class="form-control-custom" />
+                    <span asp-validation-for="Apellido2" class="text-danger-custom"></span>
                 </div>
             </div>
 
-            <h5 class="mb-3">Dirección</h5>
-            <div class="row mb-3">
+            <h5 class="section-title-custom">Dirección</h5>
+            <div class="row g-4 mb-4">
                 <div class="col-md-6">
-                    <label asp-for="IdPais" class="form-label"></label>
-                    <select asp-for="IdPais" asp-items="Model.Paises" class="form-select" id="selPais">
+                    <label asp-for="IdPais" class="form-label-custom"></label>
+                    <select asp-for="IdPais" asp-items="Model.Paises" class="form-select-custom" id="selPais">
                     </select>
-                    <span asp-validation-for="IdPais" class="text-danger"></span>
+                    <span asp-validation-for="IdPais" class="text-danger-custom"></span>
                 </div>
                 <div class="col-md-6">
-                    <label asp-for="IdProvincia" class="form-label"></label>
-                    <select asp-for="IdProvincia" class="form-select" id="selProvincia">
+                    <label asp-for="IdProvincia" class="form-label-custom"></label>
+                    <select asp-for="IdProvincia" class="form-select-custom" id="selProvincia">
                         <option value="">-- Seleccione país primero --</option>
                     </select>
-                    <span asp-validation-for="IdProvincia" class="text-danger"></span>
+                    <span asp-validation-for="IdProvincia" class="text-danger-custom"></span>
                 </div>
-            </div>
-            <div class="row mb-3">
                 <div class="col-md-4">
-                    <label asp-for="IdCanton" class="form-label"></label>
-                    <select asp-for="IdCanton" class="form-select" id="selCanton">
+                    <label asp-for="IdCanton" class="form-label-custom"></label>
+                    <select asp-for="IdCanton" class="form-select-custom" id="selCanton">
                         <option value="">-- Seleccione provincia primero --</option>
                     </select>
-                    <span asp-validation-for="IdCanton" class="text-danger"></span>
+                    <span asp-validation-for="IdCanton" class="text-danger-custom"></span>
                 </div>
                 <div class="col-md-4">
-                    <label asp-for="IdDistrito" class="form-label"></label>
-                    <select asp-for="IdDistrito" class="form-select" id="selDistrito">
+                    <label asp-for="IdDistrito" class="form-label-custom"></label>
+                    <select asp-for="IdDistrito" class="form-select-custom" id="selDistrito">
                         <option value="">-- Seleccione cantón primero --</option>
                     </select>
-                    <span asp-validation-for="IdDistrito" class="text-danger"></span>
+                    <span asp-validation-for="IdDistrito" class="text-danger-custom"></span>
                 </div>
                 <div class="col-md-4">
-                    <label asp-for="IdBarrio" class="form-label"></label>
-                    <select asp-for="IdBarrio" class="form-select" id="selBarrio">
+                    <label asp-for="IdBarrio" class="form-label-custom"></label>
+                    <select asp-for="IdBarrio" class="form-select-custom" id="selBarrio">
                         <option value="">-- Seleccione distrito primero --</option>
                     </select>
-                    <span asp-validation-for="IdBarrio" class="text-danger"></span>
+                    <span asp-validation-for="IdBarrio" class="text-danger-custom"></span>
                 </div>
             </div>
             <div class="mb-3">
-                <label asp-for="DireccionExacta" class="form-label"></label>
-                <textarea asp-for="DireccionExacta" class="form-control" rows="2"></textarea>
-                <span asp-validation-for="DireccionExacta" class="text-danger"></span>
+                <label asp-for="DireccionExacta" class="form-label-custom"></label>
+                <textarea asp-for="DireccionExacta" class="form-control-custom" rows="3"></textarea>
+                <span asp-validation-for="DireccionExacta" class="text-danger-custom"></span>
             </div>
 
-            <div class="d-flex gap-2">
+            <div class="d-flex justify-content-end gap-3 pt-2">
+                <a asp-action="Index" class="btn-outline-gold text-decoration-none">Cancelar</a>
                 <button type="submit" class="btn-gold" id="btnGuardarPropietario">Guardar</button>
-                <a asp-action="Index" class="btn-outline-gold">Cancelar</a>
             </div>
         </form>
+    </div>
+</div>
     </div>
 </div>
 

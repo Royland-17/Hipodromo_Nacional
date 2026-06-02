@@ -1,0 +1,110 @@
+@model AlimentacionViewModel
+@{
+    ViewData["Title"] = "Registrar Alimentacion";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="card-hipodromo">
+            <div class="card-header-custom">
+                <h5><i class="fas fa-bowl-food me-2"></i>Registrar Consumo por Caballo</h5>
+                <a asp-action="Index" class="btn-outline-gold text-decoration-none">
+                    <i class="fas fa-arrow-left me-1"></i> Volver
+                </a>
+            </div>
+            <div class="card-body-custom">
+        <form asp-action="Crear" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger-custom mb-3"></div>
+
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <label asp-for="IdCaballo" class="form-label-custom"></label>
+                    <select asp-for="IdCaballo" asp-items="Model.Caballos" class="form-select-custom">
+                        <option value="">Seleccione...</option>
+                    </select>
+                    <span asp-validation-for="IdCaballo" class="text-danger-custom"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="IdTipoSuministro" class="form-label-custom"></label>
+                    <select asp-for="IdTipoSuministro" asp-items="Model.TiposAlimento" class="form-select-custom" id="selTipoAlimento">
+                        <option value="">Seleccione...</option>
+                    </select>
+                    <span asp-validation-for="IdTipoSuministro" class="text-danger-custom"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="IdSuministro" class="form-label-custom"></label>
+                    <select asp-for="IdSuministro" asp-items="Model.Alimentos" class="form-select-custom" id="selSuministro">
+                        <option value="">Seleccione tipo de alimento primero...</option>
+                    </select>
+                    <span asp-validation-for="IdSuministro" class="text-danger-custom"></span>
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="FechaAlimentacion" class="form-label-custom"></label>
+                    <input asp-for="FechaAlimentacion" type="datetime-local" class="form-control-custom" />
+                    <span asp-validation-for="FechaAlimentacion" class="text-danger-custom"></span>
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="Cantidad" class="form-label-custom"></label>
+                    <input asp-for="Cantidad" class="form-control-custom" />
+                    <span asp-validation-for="Cantidad" class="text-danger-custom"></span>
+                </div>
+                <div class="col-12">
+                    <label asp-for="Observaciones" class="form-label-custom"></label>
+                    <textarea asp-for="Observaciones" class="form-control-custom" rows="3"></textarea>
+                    <span asp-validation-for="Observaciones" class="text-danger-custom"></span>
+                </div>
+            </div>
+
+            <div class="mt-4 d-flex justify-content-end gap-3 pt-2">
+                <a asp-action="Index" class="btn-outline-gold text-decoration-none">Cancelar</a>
+                <button type="submit" class="btn-gold">
+                    <i class="fas fa-floppy-disk me-2"></i> Guardar consumo
+                </button>
+            </div>
+        </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const selTipo = document.getElementById('selTipoAlimento');
+            const selSuministro = document.getElementById('selSuministro');
+            const url = '@Url.Action("ObtenerSuministros", "Alimentacion")';
+
+            function resetSuministros(msg) {
+                selSuministro.innerHTML = '';
+                selSuministro.add(new Option(msg, ''));
+            }
+
+            async function cargarSuministros() {
+                const idTipo = selTipo.value;
+                if (!idTipo) {
+                    resetSuministros('Seleccione tipo de alimento primero...');
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`${url}?idTipoSuministro=${encodeURIComponent(idTipo)}`, { cache: 'no-store' });
+                    if (!response.ok) {
+                        resetSuministros('No se pudieron cargar alimentos.');
+                        return;
+                    }
+
+                    const items = await response.json();
+                    resetSuministros(items.length ? 'Seleccione...' : 'No hay alimentos para este tipo.');
+                    for (const item of items) {
+                        selSuministro.add(new Option(item.text, item.value));
+                    }
+                } catch {
+                    resetSuministros('No se pudieron cargar alimentos.');
+                }
+            }
+
+            selTipo?.addEventListener('change', cargarSuministros);
+        })();
+    </script>
+}

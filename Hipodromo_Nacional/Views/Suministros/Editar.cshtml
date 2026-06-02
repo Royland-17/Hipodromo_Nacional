@@ -1,0 +1,69 @@
+@model SuministroViewModel
+@{
+    ViewData["Title"] = "Editar Suministro";
+    var tipoDescripcion = Model.TiposSuministro.FirstOrDefault(t => t.Value == Model.IdTipoSuministro.ToString())?.Text ?? string.Empty;
+    var fechaIngresoTexto = Model.FechaIngreso.ToString("dd/MM/yyyy");
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card-hipodromo">
+            <div class="card-header-custom">
+                <h5><i class="fas fa-pen-to-square me-2"></i>Editar Suministro</h5>
+                <a asp-action="Index" class="btn-outline-gold text-decoration-none">
+                    <i class="fas fa-arrow-left me-1"></i> Volver
+                </a>
+            </div>
+            <div class="card-body-custom">
+        <form asp-action="Editar" method="post">
+            <input type="hidden" asp-for="IdSuministro" />
+            <input type="hidden" asp-for="IdTipoSuministro" />
+            <input type="hidden" asp-for="FechaIngreso" />
+            <div asp-validation-summary="ModelOnly" class="text-danger-custom mb-3"></div>
+            <div class="alert-custom alert-info-custom" role="alert">
+                La edición disponible para suministros permite actualizar el proveedor y la cantidad disponible.
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <label asp-for="Codigo" class="form-label-custom"></label>
+                    <input asp-for="Codigo" class="form-control-custom readonly-field-custom" readonly />
+                    <span asp-validation-for="Codigo" class="text-danger-custom"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="IdTipoSuministro" class="form-label-custom"></label>
+                    <input class="form-control-custom readonly-field-custom" value="@tipoDescripcion" readonly />
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="IdProveedor" class="form-label-custom"></label>
+                    <select asp-for="IdProveedor" asp-items="Model.Proveedores" class="form-select-custom">
+                        <option value="">Seleccione...</option>
+                    </select>
+                    <span asp-validation-for="IdProveedor" class="text-danger-custom"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="CantidadDisponible" class="form-label-custom"></label>
+                    <input asp-for="CantidadDisponible" class="form-control-custom" />
+                    <span asp-validation-for="CantidadDisponible" class="text-danger-custom"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="FechaIngreso" class="form-label-custom"></label>
+                    <input class="form-control-custom readonly-field-custom" value="@fechaIngresoTexto" readonly />
+                </div>
+            </div>
+
+            <div class="mt-4 d-flex justify-content-end gap-3 pt-2">
+                <a asp-action="Index" class="btn-outline-gold text-decoration-none">Cancelar</a>
+                <button type="submit" class="btn-gold">
+                    <i class="fas fa-floppy-disk me-2"></i> Guardar cambios
+                </button>
+            </div>
+        </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

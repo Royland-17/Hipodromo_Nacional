@@ -14,21 +14,21 @@
     </div>
     <div class="card-body-custom">
         <form asp-action="Index" method="get" class="mb-3">
-            <div class="row g-2 align-items-end">
+            <div class="row g-4 align-items-end">
                 <div class="col-md-4">
-                    <label for="identificacion" class="form-label">Buscar por número de identificación</label>
-                    <input type="text" id="identificacion" name="identificacion" value="@identificacionBusqueda" class="form-control" placeholder="Ej: 1-2345-6789" />
+                    <label for="identificacion" class="form-label-custom">Buscar por número de identificación</label>
+                    <input type="text" id="identificacion" name="identificacion" value="@identificacionBusqueda" class="form-control-custom" placeholder="Ej: 1-2345-6789" />
                 </div>
                 <div class="col-md-8 d-flex gap-2">
                     <button type="submit" class="btn-gold"><i class="fas fa-magnifying-glass me-1"></i>Buscar</button>
-                    <a asp-action="Index" class="btn-outline-gold">Limpiar</a>
+                    <a asp-action="Index" class="btn-outline-gold text-decoration-none">Limpiar</a>
                 </div>
             </div>
         </form>
 
         @if (!seBusco)
         {
-            <p style="color:var(--text-muted)">Ingrese una identificación para consultar un propietario específico.</p>
+            <p class="empty-state-custom" style="padding:0; text-align:left;">Ingrese una identificación para consultar un propietario específico.</p>
         }
 
         @if (Model.Any())
@@ -95,7 +95,7 @@
 
         @if (seBusco && !Model.Any())
         {
-            <p style="color:var(--text-muted)">No se encontró un propietario con esa identificación.</p>
+            <p class="empty-state-custom" style="padding:0; text-align:left;">No se encontró un propietario con esa identificación.</p>
         }
     </div>
 </div>
