@@ -12,35 +12,25 @@ public class HomeController : Controller
 
     public async Task<IActionResult> Index()
     {
-        var caballosTask = SafeCountAsync(ct => _ctx.Caballos.CountAsync(c => c.Activo == true, ct));
-        var establosTask = SafeCountAsync(ct => _ctx.Establos.CountAsync(ct));
-        var asignacionesTask = SafeCountAsync(ct => _ctx.AsignacionesEstablos.CountAsync(a => a.Activa == true, ct));
-        var historialTask = SafeCountAsync(ct => _ctx.HvDefaults.CountAsync(ct));
-
-        await Task.WhenAll(caballosTask, establosTask, asignacionesTask, historialTask);
-
-        ViewBag.TotalCaballos = caballosTask.Result;
-        ViewBag.TotalEstablos = establosTask.Result;
-        ViewBag.TotalAsignaciones = asignacionesTask.Result;
-        ViewBag.TotalHistorial = historialTask.Result;
-        ViewBag.ConexionError = caballosTask.Result is string ||
-                                establosTask.Result is string ||
-                                asignacionesTask.Result is string ||
-                                historialTask.Result is string;
-
-        return View();
-    }
-
-    private static async Task<object> SafeCountAsync(Func<CancellationToken, Task<int>> query)
-    {
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         try
         {
-            return await query(timeout.Token);
+            ViewBag.TotalCaballos     = await _ctx.Caballos.CountAsync(c => c.Activo == true);
+            ViewBag.TotalEstablos     = await _ctx.Establos.CountAsync();
+            ViewBag.TotalAsignaciones = await _ctx.AsignacionesEstablos.CountAsync(a => a.Activa == true);
+            ViewBag.TotalPropietarios = await _ctx.Propietarios.CountAsync();
+            ViewBag.TotalHistorial    = await _ctx.Database
+                                            .SqlQueryRaw<int>("SELECT COUNT(*)::int FROM historial_veterinario")
+                                            .ToListAsync()
+                                            .ContinueWith(t => t.Result.FirstOrDefault());
+            ViewBag.ConexionError = false;
         }
         catch
         {
-            return "—";
+            ViewBag.TotalCaballos = ViewBag.TotalEstablos = ViewBag.TotalAsignaciones =
+            ViewBag.TotalPropietarios = ViewBag.TotalHistorial = "—";
+            ViewBag.ConexionError = true;
         }
+
+        return View();
     }
 }

@@ -75,12 +75,15 @@ public class EstabloService
 
     // ── Asignaciones ──────────────────────────────────────────────────────
 
-    public async Task<List<AsignacionViewModel>> ObtenerAsignacionesAsync()
+    public async Task<string?> ObtenerNombreEstabloAsync(int id) =>
+        await _ctx.Establos.Where(e => e.IdEstablo == id).Select(e => e.Nombre).FirstOrDefaultAsync();
+
+    public async Task<List<AsignacionViewModel>> ObtenerAsignacionesAsync(int? idEstablo = null)
     {
         return await _ctx.AsignacionesEstablos
             .Include(a => a.IdCaballoNavigation)
             .Include(a => a.IdEstabloNavigation)
-            .Where(a => a.Activa == true)
+            .Where(a => a.Activa == true && (idEstablo == null || a.IdEstablo == idEstablo))
             .Select(a => new AsignacionViewModel
             {
                 IdAsignacion = a.IdAsignacion,
@@ -98,8 +101,13 @@ public class EstabloService
 
     public async Task CargarSelectsAsignacionAsync(AsignacionViewModel vm)
     {
+        var asignadosIds = await _ctx.AsignacionesEstablos
+            .Where(a => a.Activa == true)
+            .Select(a => a.IdCaballo)
+            .ToListAsync();
+
         vm.Caballos = await _ctx.Caballos
-            .Where(c => c.Activo == true)
+            .Where(c => c.Activo == true && !asignadosIds.Contains(c.IdCaballo))
             .Select(c => new SelectListItem(c.Nombre + " (" + c.Codigo + ")", c.IdCaballo.ToString()))
             .ToListAsync();
 

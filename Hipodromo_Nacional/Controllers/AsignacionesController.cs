@@ -10,11 +10,17 @@ public class AsignacionesController : Controller
 
     public AsignacionesController(EstabloService svc) => _svc = svc;
 
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(int? idEstablo)
     {
         try
         {
-            var lista = await _svc.ObtenerAsignacionesAsync();
+            var lista = await _svc.ObtenerAsignacionesAsync(idEstablo);
+            if (idEstablo.HasValue)
+            {
+                var nombre = await _svc.ObtenerNombreEstabloAsync(idEstablo.Value);
+                ViewBag.FiltroEstablo = nombre;
+                ViewBag.IdEstablo = idEstablo.Value;
+            }
             return View(lista);
         }
         catch { TempData["Error"] = "No se pudo conectar a Supabase. Intenta de nuevo."; return View(new List<AsignacionViewModel>()); }

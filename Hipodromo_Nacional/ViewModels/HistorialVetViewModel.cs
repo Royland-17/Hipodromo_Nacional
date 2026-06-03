@@ -43,7 +43,7 @@ public class HistorialVetViewModel
     public string? NombreVeterinario { get; set; }
 }
 
-public class CertificacionViewModel
+public class CertificacionViewModel : IValidatableObject
 {
     public int IdCertificacion { get; set; }
 
@@ -66,6 +66,14 @@ public class CertificacionViewModel
     [Required]
     [Display(Name = "Fecha de Vencimiento")]
     public DateOnly FechaVencimiento { get; set; }
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext ctx)
+    {
+        if (FechaVencimiento <= FechaEmision)
+            yield return new ValidationResult(
+                "La fecha de vencimiento debe ser posterior a la fecha de emisión.",
+                new[] { nameof(FechaVencimiento) });
+    }
 
     [Required(ErrorMessage = "El número de certificado es obligatorio")]
     [Display(Name = "N° Certificado")]

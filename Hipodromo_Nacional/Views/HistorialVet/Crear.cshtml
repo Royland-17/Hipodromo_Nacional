@@ -32,7 +32,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label-custom">Fecha de Revisión *</label>
-                            <input asp-for="FechaRevision" type="datetime-local" class="form-control-custom" />
+                            <input asp-for="FechaRevision" type="datetime-local" step="60" class="form-control-custom" />
                             <span asp-validation-for="FechaRevision" class="text-danger-custom"></span>
                         </div>
                         <div class="col-md-6">

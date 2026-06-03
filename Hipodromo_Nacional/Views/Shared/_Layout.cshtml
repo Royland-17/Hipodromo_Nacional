@@ -33,13 +33,13 @@
             <span>Dashboard</span>
         </a>
 
-        <div class="nav-section-label mt-3">CABALLOS</div>
+        <div class="nav-section-label mt-2">CABALLOS</div>
         <a href="@Url.Action("Index","Caballos")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Caballos" ? "active" : "")">
             <i class="fas fa-horse"></i>
             <span>Gestión de Caballos</span>
         </a>
 
-        <div class="nav-section-label mt-3">VETERINARIA</div>
+        <div class="nav-section-label mt-2">VETERINARIA</div>
         <a href="@Url.Action("Index","HistorialVet")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "HistorialVet" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")">
             <i class="fas fa-stethoscope"></i>
             <span>Historial Veterinario</span>
@@ -49,7 +49,7 @@
             <span>Certificaciones</span>
         </a>
 
-        <div class="nav-section-label mt-3">ESTABLOS</div>
+        <div class="nav-section-label mt-2">ESTABLOS</div>
         <a href="@Url.Action("Index","Establos")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Establos" ? "active" : "")">
             <i class="fas fa-warehouse"></i>
             <span>Gestión de Establos</span>
@@ -59,7 +59,7 @@
             <span>Asignaciones</span>
         </a>
 
-        <div class="nav-section-label mt-3">ALIMENTACION</div>
+        <div class="nav-section-label mt-2">ALIMENTACION</div>
         <a href="@Url.Action("Index","Suministros")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Suministros" ? "active" : "")">
             <i class="fas fa-boxes-stacked"></i>
             <span>Suministros</span>
@@ -69,7 +69,7 @@
             <span>Consumo por Caballo</span>
         </a>
 
-        <div class="nav-section-label mt-3">PERSONAS</div>
+        <div class="nav-section-label mt-2">PERSONAS</div>
         <a href="@Url.Action("Index","Propietarios")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Propietarios" ? "active" : "")">
             <i class="fas fa-user-tie"></i>
             <span>Propietarios</span>

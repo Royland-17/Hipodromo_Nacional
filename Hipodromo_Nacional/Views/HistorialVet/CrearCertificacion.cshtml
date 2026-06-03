@@ -43,12 +43,14 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label-custom">Fecha de Emisión *</label>
-                            <input asp-for="FechaEmision" type="date" class="form-control-custom" />
+                            <input asp-for="FechaEmision" type="date" class="form-control-custom" id="fechaEmision" />
+                            <small style="color:var(--text-muted)">Día en que se emite el certificado.</small>
                             <span asp-validation-for="FechaEmision" class="text-danger-custom"></span>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label-custom">Fecha de Vencimiento *</label>
-                            <input asp-for="FechaVencimiento" type="date" class="form-control-custom" />
+                            <input asp-for="FechaVencimiento" type="date" class="form-control-custom" id="fechaVencimiento" />
+                            <small style="color:var(--text-muted)">Debe ser <strong style="color:var(--gold)">posterior</strong> a la fecha de emisión.</small>
                             <span asp-validation-for="FechaVencimiento" class="text-danger-custom"></span>
                         </div>
                         <div class="col-12">
@@ -71,4 +73,19 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        const emision = document.getElementById('fechaEmision');
+        const vencimiento = document.getElementById('fechaVencimiento');
+
+        function actualizarMin() {
+            if (emision.value) {
+                vencimiento.min = emision.value;
+                if (vencimiento.value && vencimiento.value <= emision.value)
+                    vencimiento.value = '';
+            }
+        }
+
+        emision.addEventListener('change', actualizarMin);
+        actualizarMin();
+    </script>
 }

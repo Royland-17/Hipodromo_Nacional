@@ -15,26 +15,25 @@ public class HistorialVetController : Controller
 
     public async Task<IActionResult> Index()
     {
-        try { await _ctx.Database.CanConnectAsync(); } catch { TempData["Error"] = "No se pudo conectar a Supabase. Intenta de nuevo."; return View(new List<HistorialVetViewModel>()); }
-        var historial = await _ctx.HvDefaults
-            .Include(h => h.IdCaballoNavigation)
-            .Include(h => h.IdVeterinarioNavigation)
-                .ThenInclude(v => v.IdUsuarioNavigation)
-            .OrderByDescending(h => h.FechaRevision)
-            .Select(h => new HistorialVetViewModel
-            {
-                IdHistorial = h.IdHistorial,
-                IdCaballo = h.IdCaballo,
-                IdVeterinario = h.IdVeterinario,
-                FechaRevision = h.FechaRevision,
-                Diagnostico = h.Diagnostico,
-                Tratamiento = h.Tratamiento,
-                Observaciones = h.Observaciones,
-                ProximoControl = h.ProximoControl,
-                NombreCaballo = h.IdCaballoNavigation.Nombre,
-                NombreVeterinario = h.IdVeterinarioNavigation.IdUsuarioNavigation.Nombre
-                    + " " + h.IdVeterinarioNavigation.IdUsuarioNavigation.Apellido1
-            })
+        var historial = await _ctx.Database
+            .SqlQueryRaw<HistorialVetResultado>(@"
+                SELECT
+                    hv.id_historial AS IdHistorial,
+                    hv.id_caballo AS IdCaballo,
+                    hv.id_veterinario AS IdVeterinario,
+                    hv.id_certificacion AS IdCertificacion,
+                    hv.fecha_revision AS FechaRevision,
+                    hv.diagnostico AS Diagnostico,
+                    hv.tratamiento AS Tratamiento,
+                    hv.observaciones AS Observaciones,
+                    hv.proximo_control AS ProximoControl,
+                    c.nombre AS NombreCaballo,
+                    u.nombre || ' ' || u.apellido1 AS NombreVeterinario
+                FROM historial_veterinario hv
+                JOIN caballos c ON c.id_caballo = hv.id_caballo
+                JOIN veterinarios v ON v.id_veterinario = hv.id_veterinario
+                JOIN usuarios u ON u.id_usuario = v.id_usuario
+                ORDER BY hv.fecha_revision DESC")
             .ToListAsync();
 
         return View(historial);
@@ -61,19 +60,20 @@ public class HistorialVetController : Controller
             return View(vm);
         }
 
-        var registro = new HvDefault
-        {
-            IdCaballo = vm.IdCaballo,
-            IdVeterinario = vm.IdVeterinario,
-            IdCertificacion = vm.IdCertificacion,
-            FechaRevision = vm.FechaRevision,
-            Diagnostico = vm.Diagnostico,
-            Tratamiento = vm.Tratamiento,
-            Observaciones = vm.Observaciones,
-            ProximoControl = vm.ProximoControl
-        };
-        _ctx.HvDefaults.Add(registro);
-        await _ctx.SaveChangesAsync();
+        await _ctx.Database.ExecuteSqlRawAsync(@"
+            INSERT INTO historial_veterinario
+                (id_caballo, id_veterinario, id_certificacion, fecha_revision, diagnostico, tratamiento, observaciones, proximo_control)
+            VALUES
+                ({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7})",
+            vm.IdCaballo,
+            vm.IdVeterinario,
+            (object?)vm.IdCertificacion ?? DBNull.Value,
+            DateTime.SpecifyKind(vm.FechaRevision, DateTimeKind.Utc),
+            vm.Diagnostico,
+            (object?)vm.Tratamiento ?? DBNull.Value,
+            (object?)vm.Observaciones ?? DBNull.Value,
+            (object?)vm.ProximoControl ?? DBNull.Value
+        );
 
         TempData["Exito"] = "Registro veterinario guardado exitosamente.";
         return RedirectToAction(nameof(Index));

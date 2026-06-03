@@ -73,13 +73,10 @@
                                         <a href="@Url.Action("Editar", new { id = c.IdCaballo })" class="btn-outline-gold">
                                             <i class="fas fa-pen"></i>
                                         </a>
-                                        <form method="post" action="@Url.Action("Desactivar", new { id = c.IdCaballo })" style="display:inline">
-                                            @Html.AntiForgeryToken()
-                                            <button type="submit" class="btn-outline-danger-custom"
-                                                    onclick="return confirm('¿Desactivar este caballo?')">
-                                                <i class="fas fa-ban"></i>
-                                            </button>
-                                        </form>
+                                        <button class="btn-outline-danger-custom"
+                                                onclick="abrirModal(@c.IdCaballo, '@c.Nombre')">
+                                            <i class="fas fa-ban"></i>
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -90,3 +87,41 @@
         }
     </div>
 </div>
+
+<!-- Modal Confirmar Desactivar -->
+<div id="modalDesactivar" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;background:rgba(0,0,0,.7);backdrop-filter:blur(4px)">
+    <div style="background:var(--bg-card);border:1px solid rgba(239,68,68,.3);border-radius:16px;padding:36px;max-width:420px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5)">
+        <div style="font-size:3rem;margin-bottom:16px">⚠️</div>
+        <h5 style="font-family:'Playfair Display',serif;color:#f87171;font-size:1.2rem;margin-bottom:8px">Desactivar Caballo</h5>
+        <p style="color:var(--text-muted);font-size:.9rem;margin-bottom:24px">
+            ¿Estás segura de que deseas desactivar a <strong id="nombreCaballo" style="color:var(--text-primary)"></strong>? Esta acción lo ocultará del sistema.
+        </p>
+        <div class="d-flex gap-3 justify-content-center">
+            <button onclick="cerrarModal()" style="background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:10px 24px;border-radius:8px;cursor:pointer;font-size:.9rem;transition:all .2s" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-muted)'">
+                Cancelar
+            </button>
+            <form id="formDesactivar" method="post">
+                @Html.AntiForgeryToken()
+                <button type="submit" style="background:linear-gradient(135deg,#ef4444,#b91c1c);border:none;color:white;padding:10px 24px;border-radius:8px;cursor:pointer;font-size:.9rem;font-weight:600">
+                    <i class="fas fa-ban me-2"></i>Desactivar
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function abrirModal(id, nombre) {
+        document.getElementById('nombreCaballo').textContent = nombre;
+        document.getElementById('formDesactivar').action = '/Caballos/Desactivar/' + id;
+        document.getElementById('modalDesactivar').style.display = 'flex';
+    }
+    function cerrarModal() {
+        document.getElementById('modalDesactivar').style.display = 'none';
+    }
+    document.getElementById('modalDesactivar').addEventListener('click', function(e) {
+        if (e.target === this) cerrarModal();
+    });
+</script>
+}

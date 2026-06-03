@@ -51,7 +51,7 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 22px 20px;
+    padding: 14px 16px;
     border-bottom: 1px solid var(--border);
     min-height: var(--topbar-h);
 }
@@ -82,18 +82,25 @@ body {
 
 .sidebar-nav {
     flex: 1;
-    padding: 16px 12px;
+    padding: 10px 10px;
     overflow-y: auto;
     overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(212,168,67,.3) transparent;
 }
 
+.sidebar-nav::-webkit-scrollbar { width: 3px; }
+.sidebar-nav::-webkit-scrollbar-track { background: transparent; }
+.sidebar-nav::-webkit-scrollbar-thumb { background: rgba(212,168,67,.3); border-radius: 3px; }
+.sidebar-nav::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+
 .nav-section-label {
-    font-size: .65rem;
+    font-size: .62rem;
     font-weight: 600;
     letter-spacing: 1.5px;
     text-transform: uppercase;
     color: var(--text-muted);
-    padding: 6px 8px 4px;
+    padding: 4px 8px 2px;
     white-space: nowrap;
     overflow: hidden;
 }
@@ -101,16 +108,16 @@ body {
 .nav-item {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 10px 12px;
+    gap: 10px;
+    padding: 7px 10px;
     border-radius: 8px;
     color: var(--text-muted);
     text-decoration: none;
-    font-size: .88rem;
+    font-size: .85rem;
     font-weight: 500;
     transition: background var(--transition), color var(--transition);
     white-space: nowrap;
-    margin-bottom: 2px;
+    margin-bottom: 1px;
 }
 
 .nav-item i { width: 18px; text-align: center; flex-shrink: 0; font-size: 1rem; }

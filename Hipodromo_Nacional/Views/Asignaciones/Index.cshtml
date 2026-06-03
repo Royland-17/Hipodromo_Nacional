@@ -3,9 +3,51 @@
     ViewData["Title"] = "Asignaciones a Establos";
 }
 
+<!-- Modal confirmar salida -->
+<div id="modalSalida" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);align-items:center;justify-content:center">
+    <div style="background:#161b22;border:1px solid #30363d;border-radius:12px;padding:32px;max-width:420px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.5)">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+            <span style="font-size:1.8rem">🚪</span>
+            <h5 style="margin:0;color:#f0f6fc;font-weight:600">Dar Salida al Caballo</h5>
+        </div>
+        <p style="color:#8b949e;margin-bottom:24px">
+            ¿Confirmas que deseas finalizar esta asignación? El caballo quedará disponible para ser reasignado.
+        </p>
+        <div style="display:flex;gap:12px;justify-content:flex-end">
+            <button onclick="cerrarModal()" style="background:transparent;border:1px solid #30363d;color:#8b949e;padding:8px 20px;border-radius:8px;cursor:pointer;font-size:.9rem">
+                Cancelar
+            </button>
+            <form id="formSalida" method="post">
+                @Html.AntiForgeryToken()
+                <button type="submit" style="background:#b91c1c;border:none;color:#fff;padding:8px 20px;border-radius:8px;cursor:pointer;font-size:.9rem;font-weight:600">
+                    <i class="fas fa-door-open me-1"></i> Confirmar Salida
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
 <div class="card-hipodromo">
     <div class="card-header-custom">
-        <h5><i class="fas fa-link me-2"></i>Asignaciones Activas</h5>
+        <div>
+            <h5 style="margin:0">
+                <i class="fas fa-link me-2"></i>
+                @if (ViewBag.FiltroEstablo != null)
+                {
+                    <span>Asignaciones — @ViewBag.FiltroEstablo</span>
+                }
+                else
+                {
+                    <span>Asignaciones Activas</span>
+                }
+            </h5>
+            @if (ViewBag.FiltroEstablo != null)
+            {
+                <a href="@Url.Action("Index","Establos")" style="font-size:.8rem;color:var(--text-muted);text-decoration:none">
+                    <i class="fas fa-arrow-left me-1"></i> Volver a Establos
+                </a>
+            }
+        </div>
         <a href="@Url.Action("Crear")" class="btn-gold">
             <i class="fas fa-plus me-1"></i> Nueva Asignación
         </a>
@@ -15,7 +57,16 @@
         {
             <div class="text-center py-5" style="color:var(--text-muted)">
                 <i class="fas fa-link" style="font-size:3rem;opacity:.3"></i>
-                <p class="mt-3">No hay asignaciones activas.</p>
+                <p class="mt-3">
+                    @if (ViewBag.FiltroEstablo != null)
+                    {
+                        <span>Este establo no tiene caballos asignados actualmente.</span>
+                    }
+                    else
+                    {
+                        <span>No hay asignaciones activas.</span>
+                    }
+                </p>
             </div>
         }
         else
@@ -51,13 +102,10 @@
                             <td>@a.FechaIngreso.ToString("dd/MM/yyyy")</td>
                             <td style="color:var(--text-muted);font-size:.83rem">@(a.Observaciones ?? "—")</td>
                             <td>
-                                <form method="post" action="@Url.Action("Desasignar", new { id = a.IdAsignacion })">
-                                    @Html.AntiForgeryToken()
-                                    <button type="submit" class="btn-outline-danger-custom"
-                                            onclick="return confirm('¿Finalizar esta asignación?')">
-                                        <i class="fas fa-door-open me-1"></i> Dar Salida
-                                    </button>
-                                </form>
+                                <button type="button" class="btn-outline-danger-custom"
+                                        onclick="abrirModal('@Url.Action("Desasignar", new { id = a.IdAsignacion })')">
+                                    <i class="fas fa-door-open me-1"></i> Dar Salida
+                                </button>
                             </td>
                         </tr>
                     }
@@ -66,3 +114,20 @@
         }
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        const modal = document.getElementById('modalSalida');
+
+        function abrirModal(url) {
+            document.getElementById('formSalida').action = url;
+            modal.style.display = 'flex';
+        }
+
+        function cerrarModal() {
+            modal.style.display = 'none';
+        }
+
+        modal.addEventListener('click', e => { if (e.target === modal) cerrarModal(); });
+    </script>
+}
