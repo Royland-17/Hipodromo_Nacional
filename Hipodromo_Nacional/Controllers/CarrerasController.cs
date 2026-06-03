@@ -24,6 +24,20 @@ public class CarrerasController : Controller
         }
     }
 
+    public async Task<IActionResult> ControlInscripciones()
+    {
+        try
+        {
+            var lista = await _svc.ObtenerListaAsync();
+            return View(lista);
+        }
+        catch
+        {
+            TempData["Error"] = "No se pudo conectar a la base de datos. Intenta de nuevo.";
+            return View(new List<CarreraListaViewModel>());
+        }
+    }
+
     public async Task<IActionResult> Crear()
     {
         try
