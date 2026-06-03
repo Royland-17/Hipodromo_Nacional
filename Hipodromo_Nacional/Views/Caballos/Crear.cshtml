@@ -29,7 +29,9 @@
                         </div>
                         <div class="col-md-4">
                             <label class="form-label-custom">Fecha de Nacimiento *</label>
-                            <input asp-for="FechaNacimiento" type="date" class="form-control-custom" />
+                            <input asp-for="FechaNacimiento" type="date" class="form-control-custom"
+                                   min="1990-01-01" max="@DateTime.Today.ToString("yyyy-MM-dd")"
+                                   value="@DateTime.Today.AddYears(-3).ToString("yyyy-MM-dd")" />
                             <span asp-validation-for="FechaNacimiento" class="text-danger-custom"></span>
                         </div>
                         <div class="col-md-4">
