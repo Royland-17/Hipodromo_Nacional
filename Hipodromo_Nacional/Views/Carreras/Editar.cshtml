@@ -1,0 +1,88 @@
+@model Hipodromo_Nacional.ViewModels.CarreraViewModel
+@{
+    ViewData["Title"] = "Editar Carrera";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="card-hipodromo">
+            <div class="card-header-custom">
+                <h5><i class="fas fa-pen me-2"></i>Editar Carrera — @Model.Nombre</h5>
+                <a href="@Url.Action("Index")" class="btn-outline-gold">
+                    <i class="fas fa-arrow-left me-1"></i> Volver
+                </a>
+            </div>
+            <div class="card-body-custom">
+                <form asp-action="Editar" asp-route-id="@Model.IdEvento" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <label class="form-label-custom">Código *</label>
+                            <input asp-for="CodigoEvento" class="form-control-custom" />
+                            <span asp-validation-for="CodigoEvento" class="text-danger-custom"></span>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label-custom">Nombre *</label>
+                            <input asp-for="Nombre" class="form-control-custom" />
+                            <span asp-validation-for="Nombre" class="text-danger-custom"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-custom">Fecha y hora *</label>
+                            <input asp-for="FechaEvento" type="datetime-local" class="form-control-custom" />
+                            <span asp-validation-for="FechaEvento" class="text-danger-custom"></span>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label-custom">Distancia (m) *</label>
+                            <input asp-for="DistanciaMetros" type="number" class="form-control-custom" />
+                            <span asp-validation-for="DistanciaMetros" class="text-danger-custom"></span>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label-custom">Comisión (%) *</label>
+                            <input asp-for="ComisionAdmin" type="number" step="0.01" class="form-control-custom" />
+                            <span asp-validation-for="ComisionAdmin" class="text-danger-custom"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label-custom">Premio total *</label>
+                            <input asp-for="PremioTotal" type="number" step="0.01" class="form-control-custom" />
+                            <span asp-validation-for="PremioTotal" class="text-danger-custom"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label-custom">Precio inscripción *</label>
+                            <input asp-for="PrecioInscripcion" type="number" step="0.01" class="form-control-custom" />
+                            <span asp-validation-for="PrecioInscripcion" class="text-danger-custom"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label-custom">Tipo de carrera *</label>
+                            <select asp-for="IdTipoCarrera" asp-items="Model.TiposCarrera" class="form-select-custom">
+                                <option value="">Seleccionar...</option>
+                            </select>
+                            <span asp-validation-for="IdTipoCarrera" class="text-danger-custom"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label-custom">Estado *</label>
+                            <select asp-for="IdEstadoEvento" asp-items="Model.EstadosEvento" class="form-select-custom">
+                                <option value="">Seleccionar...</option>
+                            </select>
+                            <span asp-validation-for="IdEstadoEvento" class="text-danger-custom"></span>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label-custom">Observaciones</label>
+                            <textarea asp-for="Observaciones" class="form-control-custom" rows="3"></textarea>
+                            <span asp-validation-for="Observaciones" class="text-danger-custom"></span>
+                        </div>
+                        <div class="col-12 d-flex justify-content-end gap-3 pt-2">
+                            <a href="@Url.Action("Index")" class="btn-outline-gold py-2 px-4 text-decoration-none">Cancelar</a>
+                            <button type="submit" class="btn-gold py-2 px-4">
+                                <i class="fas fa-save me-2"></i> Actualizar Carrera
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
