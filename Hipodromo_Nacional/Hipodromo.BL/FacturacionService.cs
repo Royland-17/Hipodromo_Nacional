@@ -153,17 +153,6 @@ public class FacturacionService
     {
         await EjecutarEvaluacionPropietariosFrecuentesAsync();
 
-        var numeroFactura = vm.NumeroFactura.Trim();
-
-        var numeroDuplicado = await _ctx.Facturas
-            .AsNoTracking()
-            .AnyAsync(f => f.NumeroFactura == numeroFactura);
-
-        if (numeroDuplicado)
-        {
-            throw new InvalidOperationException("Ya existe una factura con ese numero.");
-        }
-
         var inscripciones = await _ctx.Inscripciones
             .Include(i => i.IdEventoNavigation)
             .Include(i => i.IdCaballoNavigation)
@@ -176,13 +165,25 @@ public class FacturacionService
             throw new InvalidOperationException("Algunas inscripciones seleccionadas no estan disponibles para facturacion.");
         }
 
-        if (inscripciones.Any(i => i.IdCaballoNavigation.IdPropietario != vm.IdPropietario))
+        var propietariosSeleccionados = inscripciones
+            .Select(i => i.IdCaballoNavigation.IdPropietario)
+            .Distinct()
+            .ToList();
+
+        if (propietariosSeleccionados.Count != 1)
         {
             throw new InvalidOperationException("Solo puedes facturar inscripciones de caballos del propietario seleccionado.");
         }
 
-        var aplicarDescuentoAutomatico = await DebeAplicarseDescuentoAutomaticoAsync(vm.IdPropietario);
-        var descuentoPct = aplicarDescuentoAutomatico ? 10m : vm.DescuentoPct;
+        var idPropietarioFactura = propietariosSeleccionados[0];
+
+        if (vm.IdPropietario > 0 && vm.IdPropietario != idPropietarioFactura)
+        {
+            throw new InvalidOperationException("Solo puedes facturar inscripciones de caballos del propietario seleccionado.");
+        }
+
+        var aplicarDescuentoAutomatico = await DebeAplicarseDescuentoAutomaticoAsync(idPropietarioFactura);
+        var descuentoPct = aplicarDescuentoAutomatico ? 10m : 0m;
 
         var subtotal = inscripciones.Sum(i => i.IdEventoNavigation.PrecioInscripcion);
         var montoDescuento = Math.Round(subtotal * descuentoPct / 100, 2);
@@ -195,9 +196,11 @@ public class FacturacionService
 
         try
         {
+            var numeroFactura = await GenerarNumeroFacturaAsync();
+
             var factura = new Factura
             {
-                IdPropietario  = vm.IdPropietario,
+                IdPropietario  = idPropietarioFactura,
                 NumeroFactura  = numeroFactura,
                 FechaFactura   = vm.FechaFactura,
                 Subtotal       = subtotal,
@@ -232,7 +235,8 @@ public class FacturacionService
             }
             catch (DbUpdateException ex) when (EsNumeroFacturaDuplicado(ex))
             {
-                throw new InvalidOperationException("Ya existe una factura con ese numero.", ex);
+                factura.NumeroFactura = await GenerarNumeroFacturaAsync();
+                await _ctx.SaveChangesAsync();
             }
 
             foreach (var ins in inscripciones)
@@ -259,7 +263,7 @@ public class FacturacionService
 
             if (aplicarDescuentoAutomatico)
             {
-                await ReiniciarDescuentoAutomaticoAsync(vm.IdPropietario);
+                await ReiniciarDescuentoAutomaticoAsync(idPropietarioFactura);
             }
 
             await tx.CommitAsync();
@@ -269,6 +273,30 @@ public class FacturacionService
             await tx.RollbackAsync();
             throw;
         }
+    }
+
+    private async Task<string> GenerarNumeroFacturaAsync()
+    {
+        var prefijo = $"FAC-{DateTime.Now:yyyy}-";
+
+        var numeros = await _ctx.Facturas
+            .AsNoTracking()
+            .Where(f => f.NumeroFactura.StartsWith(prefijo))
+            .Select(f => f.NumeroFactura)
+            .ToListAsync();
+
+        var maxConsecutivo = 0;
+        foreach (var numero in numeros)
+        {
+            if (string.IsNullOrWhiteSpace(numero) || numero.Length <= prefijo.Length)
+                continue;
+
+            var sufijo = numero[prefijo.Length..];
+            if (int.TryParse(sufijo, out var consecutivo) && consecutivo > maxConsecutivo)
+                maxConsecutivo = consecutivo;
+        }
+
+        return $"{prefijo}{(maxConsecutivo + 1):D6}";
     }
 
     private async Task EjecutarEvaluacionPropietariosFrecuentesAsync()

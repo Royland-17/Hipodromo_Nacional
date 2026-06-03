@@ -80,7 +80,7 @@ public class FacturacionController : Controller
         }
         catch (InvalidOperationException ex)
         {
-            ModelState.AddModelError(nameof(vm.NumeroFactura), ex.Message);
+            ModelState.AddModelError(string.Empty, ex.Message);
             await _svc.CargarSelectsCrearAsync(vm);
             return View(vm);
         }
