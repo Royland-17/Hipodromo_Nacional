@@ -20,6 +20,7 @@ builder.Services.AddScoped<EstabloService>();
 builder.Services.AddScoped<PropietarioService>();
 builder.Services.AddScoped<SuministroService>();
 builder.Services.AddScoped<AlimentacionService>();
+builder.Services.AddScoped<FacturacionService>();
 
 // ==========================================
 // 2. CONSTRUCCIÓN DE LA APLICACIÓN
