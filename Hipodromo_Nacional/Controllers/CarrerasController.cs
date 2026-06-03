@@ -74,7 +74,7 @@ public class CarrerasController : Controller
         }
         catch (InvalidOperationException ex)
         {
-            ModelState.AddModelError(nameof(vm.CodigoEvento), ex.Message);
+            ModelState.AddModelError(string.Empty, ex.Message);
             await _svc.CargarSelectsAsync(vm);
             return View(vm);
         }
@@ -115,6 +115,10 @@ public class CarrerasController : Controller
     {
         if (!ModelState.IsValid)
         {
+            var carreraActual = await _svc.ObtenerPorIdAsync(id);
+            if (carreraActual is not null)
+                vm.CodigoEvento = carreraActual.CodigoEvento;
+
             await _svc.CargarSelectsAsync(vm);
             return View(vm);
         }

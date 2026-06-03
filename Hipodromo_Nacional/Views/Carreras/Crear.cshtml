@@ -16,10 +16,10 @@
                 <form asp-action="Crear" method="post">
                     @Html.AntiForgeryToken()
                     <div class="row g-4">
-                        <div class="col-md-4">
-                            <label class="form-label-custom">Código *</label>
-                            <input asp-for="CodigoEvento" class="form-control-custom" placeholder="CAR-001" />
-                            <span asp-validation-for="CodigoEvento" class="text-danger-custom"></span>
+                        <div class="col-12">
+                            <div class="alert-custom" style="background:rgba(245,196,81,.10);border:1px solid rgba(245,196,81,.25);color:var(--text-primary)">
+                                <i class="fas fa-wand-magic-sparkles me-2"></i>El código de evento se genera automáticamente al guardar la carrera.
+                            </div>
                         </div>
                         <div class="col-md-8">
                             <label class="form-label-custom">Nombre *</label>

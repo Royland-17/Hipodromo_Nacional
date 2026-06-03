@@ -56,16 +56,7 @@ public class CarreraService
 
     public async Task CrearAsync(CarreraViewModel vm)
     {
-        var codigoEvento = vm.CodigoEvento.Trim();
-
-        var codigoDuplicado = await _ctx.Eventos
-            .AsNoTracking()
-            .AnyAsync(e => e.CodigoEvento == codigoEvento);
-
-        if (codigoDuplicado)
-        {
-            throw new InvalidOperationException("Ya existe una carrera con ese codigo de evento.");
-        }
+        var codigoEvento = await GenerarCodigoEventoAsync();
 
         var carrera = new Evento
         {
@@ -103,7 +94,8 @@ public class CarreraService
         }
         catch (DbUpdateException ex) when (EsCodigoEventoDuplicado(ex))
         {
-            throw new InvalidOperationException("Ya existe una carrera con ese codigo de evento.", ex);
+            carrera.CodigoEvento = await GenerarCodigoEventoAsync();
+            await _ctx.SaveChangesAsync();
         }
     }
 
@@ -112,7 +104,6 @@ public class CarreraService
         var carrera = await _ctx.Eventos.FindAsync(id)
             ?? throw new KeyNotFoundException();
 
-        carrera.CodigoEvento = vm.CodigoEvento;
         carrera.Nombre = vm.Nombre;
         carrera.FechaEvento = vm.FechaEvento;
         carrera.DistanciaMetros = vm.DistanciaMetros;
@@ -124,6 +115,30 @@ public class CarreraService
         carrera.Observaciones = vm.Observaciones;
 
         await _ctx.SaveChangesAsync();
+    }
+
+    private async Task<string> GenerarCodigoEventoAsync()
+    {
+        var prefijo = $"CAR-{DateTime.Now:yyyy}-";
+
+        var codigos = await _ctx.Eventos
+            .AsNoTracking()
+            .Where(e => e.CodigoEvento.StartsWith(prefijo))
+            .Select(e => e.CodigoEvento)
+            .ToListAsync();
+
+        var maxConsecutivo = 0;
+        foreach (var codigo in codigos)
+        {
+            if (string.IsNullOrWhiteSpace(codigo) || codigo.Length <= prefijo.Length)
+                continue;
+
+            var sufijo = codigo[prefijo.Length..];
+            if (int.TryParse(sufijo, out var consecutivo) && consecutivo > maxConsecutivo)
+                maxConsecutivo = consecutivo;
+        }
+
+        return $"{prefijo}{(maxConsecutivo + 1):D6}";
     }
 
     public async Task<CarreraResumenViewModel?> ObtenerResumenAsync(int id)
