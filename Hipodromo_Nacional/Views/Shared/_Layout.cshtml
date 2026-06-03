@@ -73,6 +73,12 @@
             <span>Consumo por Caballo</span>
         </a>
 
+        <div class="nav-section-label mt-2">REPORTES</div>
+        <a href="@Url.Action("Resultados","Reportes")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Reportes" ? "active" : "")">
+            <i class="fas fa-chart-bar"></i>
+            <span>Resultados de Carreras</span>
+        </a>
+
         <div class="nav-section-label mt-2">FACTURACIÓN</div>
         <a href="@Url.Action("Index","Facturacion")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Facturacion" ? "active" : "")">
             <i class="fas fa-file-invoice-dollar"></i>

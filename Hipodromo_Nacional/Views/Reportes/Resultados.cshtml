@@ -1,0 +1,162 @@
+@model Hipodromo_Nacional.ViewModels.ReporteResultadosViewModel
+@{
+    ViewData["Title"] = "Reportes de Resultados";
+}
+
+<!-- Filtro por evento -->
+<div class="card-hipodromo mb-4">
+    <div class="card-header-custom">
+        <h5><i class="fas fa-chart-bar me-2"></i>Reportes de Resultados</h5>
+    </div>
+    <div class="card-body-custom">
+        <form method="get" class="d-flex gap-3 align-items-end flex-wrap">
+            <div style="min-width:280px">
+                <label class="form-label-custom">Filtrar por Evento</label>
+                <select name="evento" class="form-select-custom" onchange="this.form.submit()">
+                    <option value="">Todos los eventos</option>
+                    @foreach (var e in Model.Eventos)
+                    {
+                        if (Model.EventoFiltro == e)
+                        {
+                            <option value="@e" selected>@e</option>
+                        }
+                        else
+                        {
+                            <option value="@e">@e</option>
+                        }
+                    }
+                </select>
+            </div>
+            @if (!string.IsNullOrEmpty(Model.EventoFiltro))
+            {
+                <a href="@Url.Action("Resultados")" class="btn-outline-gold py-2 px-3 text-decoration-none">
+                    <i class="fas fa-xmark me-1"></i> Limpiar filtro
+                </a>
+            }
+        </form>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Resultados por evento -->
+    <div class="col-lg-8">
+        <div class="card-hipodromo">
+            <div class="card-header-custom">
+                <h6 style="margin:0">
+                    <i class="fas fa-flag-checkered me-2"></i>
+                    @(string.IsNullOrEmpty(Model.EventoFiltro) ? "Todos los Resultados" : Model.EventoFiltro)
+                </h6>
+                <span style="color:var(--text-muted);font-size:.8rem">@Model.Resultados.Count registro(s)</span>
+            </div>
+            <div class="card-body-custom p-0">
+                @if (!Model.Resultados.Any())
+                {
+                    <div class="text-center py-5" style="color:var(--text-muted)">
+                        <i class="fas fa-flag-checkered" style="font-size:3rem;opacity:.3"></i>
+                        <p class="mt-3">No hay resultados registrados.</p>
+                    </div>
+                }
+                else
+                {
+                    <table class="table-hipodromo">
+                        <thead>
+                            <tr>
+                                <th>Pos.</th>
+                                <th>Caballo</th>
+                                <th>Propietario</th>
+                                @if (string.IsNullOrEmpty(Model.EventoFiltro))
+                                {
+                                    <th>Evento</th>
+                                    <th>Fecha</th>
+                                }
+                                <th>Tiempo (s)</th>
+                                <th>Premio</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var r in Model.Resultados)
+                            {
+                                var posColor = r.PosicionFinal == 1 ? "#d4a843" : r.PosicionFinal == 2 ? "#94a3b8" : r.PosicionFinal == 3 ? "#cd7f32" : "var(--text-muted)";
+                                var posMedal = r.PosicionFinal == 1 ? "🥇" : r.PosicionFinal == 2 ? "🥈" : r.PosicionFinal == 3 ? "🥉" : $"#{r.PosicionFinal}";
+                                <tr style="@(r.Descalificado == true ? "opacity:.5" : "")">
+                                    <td>
+                                        <span style="font-size:1.1rem">@posMedal</span>
+                                    </td>
+                                    <td style="font-weight:600">@r.Caballo</td>
+                                    <td style="color:var(--text-muted);font-size:.85rem">@r.Propietario</td>
+                                    @if (string.IsNullOrEmpty(Model.EventoFiltro))
+                                    {
+                                        <td style="font-size:.82rem">@r.Evento</td>
+                                        <td style="white-space:nowrap;font-size:.82rem">@(r.FechaEvento?.ToString("dd/MM/yyyy") ?? "—")</td>
+                                    }
+                                    <td style="color:var(--text-muted)">@(r.TiempoSegundos?.ToString("F3") ?? "—")</td>
+                                    <td style="color:#4ade80;font-weight:600">@(r.PremioObtenido.HasValue ? "₡" + r.PremioObtenido.Value.ToString("N0") : "—")</td>
+                                    <td>
+                                        @if (r.Descalificado == true)
+                                        {
+                                            <span class="badge-salud badge-danger">Desc.</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge-salud badge-ok">OK</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Ranking general -->
+    <div class="col-lg-4">
+        <div class="card-hipodromo">
+            <div class="card-header-custom">
+                <h6 style="margin:0"><i class="fas fa-trophy me-2"></i>Ranking General</h6>
+            </div>
+            <div class="card-body-custom p-0">
+                @if (!Model.Ranking.Any())
+                {
+                    <div class="text-center py-4" style="color:var(--text-muted)">
+                        <p style="font-size:.85rem">Sin datos de ranking.</p>
+                    </div>
+                }
+                else
+                {
+                    <table class="table-hipodromo">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Caballo</th>
+                                <th title="Victorias"><i class="fas fa-trophy" style="color:var(--gold)"></i></th>
+                                <th title="Podios">🏅</th>
+                                <th>Premios</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{ int pos = 1; }
+                            @foreach (var r in Model.Ranking)
+                            {
+                                var medal = pos == 1 ? "🥇" : pos == 2 ? "🥈" : pos == 3 ? "🥉" : $"{pos}";
+                                <tr>
+                                    <td style="font-size:1rem">@medal</td>
+                                    <td>
+                                        <div style="font-weight:600;font-size:.85rem">@r.Caballo</div>
+                                        <div style="color:var(--text-muted);font-size:.75rem">@r.Propietario</div>
+                                    </td>
+                                    <td style="color:var(--gold);font-weight:700">@r.Victorias</td>
+                                    <td style="color:var(--text-muted)">@r.Podios</td>
+                                    <td style="color:#4ade80;font-size:.8rem">₡@r.PremiosAcumulados.ToString("N0")</td>
+                                </tr>
+                                pos++;
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    </div>
+</div>
