@@ -58,10 +58,14 @@
             <i class="fas fa-link"></i>
             <span>Asignaciones</span>
         </a>
-<div class="nav-section-label mt-2">CARRERAS</div>
-<a href="@Url.Action("Index","Carreras")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Carreras" ? "active" : "")">
+<div class="nav-section-label mt-3">CARRERAS</div>
+<a href="@Url.Action("Index","Carreras")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Carreras" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")">
     <i class="fas fa-flag-checkered"></i>
     <span>Gestión de Carreras</span>
+</a>
+<a href="@Url.Action("ControlInscripciones","Carreras")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Carreras" && (ViewContext.RouteData.Values["action"]?.ToString() == "ControlInscripciones" || ViewContext.RouteData.Values["action"]?.ToString() == "Inscripciones" || ViewContext.RouteData.Values["action"]?.ToString() == "RegistrarInscripcion") ? "active" : "")">
+    <i class="fas fa-list-check"></i>
+    <span>Control de Inscripciones</span>
 </a>
         <div class="nav-section-label mt-2">ALIMENTACION</div>
         <a href="@Url.Action("Index","Suministros")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Suministros" ? "active" : "")">
