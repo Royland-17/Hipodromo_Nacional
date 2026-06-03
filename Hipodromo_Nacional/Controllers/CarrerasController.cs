@@ -49,9 +49,18 @@ public class CarrerasController : Controller
             return View(vm);
         }
 
-        await _svc.CrearAsync(vm);
-        TempData["Exito"] = "Carrera registrada exitosamente.";
-        return RedirectToAction(nameof(Index));
+        try
+        {
+            await _svc.CrearAsync(vm);
+            TempData["Exito"] = "Carrera registrada exitosamente.";
+            return RedirectToAction(nameof(Index));
+        }
+        catch
+        {
+            TempData["Error"] = "No se pudo guardar la carrera. Verifica que el código no esté repetido y que el contador de eventos esté actualizado.";
+            await _svc.CargarSelectsAsync(vm);
+            return View(vm);
+        }
     }
 
     public async Task<IActionResult> Editar(int id)
@@ -193,4 +202,3 @@ public class CarrerasController : Controller
         return RedirectToAction(nameof(Resultados), new { id = vm.IdEvento });
     }
 }
-
