@@ -30,11 +30,19 @@
                             </select>
                             <span asp-validation-for="IdVeterinario" class="text-danger-custom"></span>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label-custom">Fecha de Revisión *</label>
-                            <input asp-for="FechaRevision" type="datetime-local" step="60" class="form-control-custom" />
+                            <input id="fechaRevision" type="date" class="form-control-custom"
+                                   value="@DateTime.Today.ToString("yyyy-MM-dd")"
+                                   max="@DateTime.Today.ToString("yyyy-MM-dd")" />
                             <span asp-validation-for="FechaRevision" class="text-danger-custom"></span>
                         </div>
+                        <div class="col-md-2">
+                            <label class="form-label-custom">Hora *</label>
+                            <input id="horaRevision" type="time" class="form-control-custom"
+                                   value="@DateTime.Now.ToString("HH:mm")" />
+                        </div>
+                        <input asp-for="FechaRevision" type="hidden" id="fechaRevisionHidden" />
                         <div class="col-md-6">
                             <label class="form-label-custom">Certificación Vinculada</label>
                             <select asp-for="IdCertificacion" asp-items="Model.Certificaciones" class="form-select-custom">
@@ -76,4 +84,11 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.querySelector('form').addEventListener('submit', function () {
+            const fecha = document.getElementById('fechaRevision').value;
+            const hora = document.getElementById('horaRevision').value || '00:00';
+            document.getElementById('fechaRevisionHidden').value = fecha + 'T' + hora;
+        });
+    </script>
 }
