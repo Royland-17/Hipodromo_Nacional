@@ -1,0 +1,87 @@
+@model Hipodromo_Nacional.ViewModels.ResultadosCarreraViewModel
+@{
+    ViewData["Title"] = "Resultados de Carrera";
+}
+
+<div class="card-hipodromo">
+    <div class="card-header-custom">
+        <h5><i class="fas fa-trophy me-2"></i>Resultados — @Model.Carrera.Nombre</h5>
+        <div class="d-flex gap-2">
+            <a href="@Url.Action("Index")" class="btn-outline-gold">
+                <i class="fas fa-arrow-left me-1"></i> Volver
+            </a>
+            <a href="@Url.Action("Inscripciones", new { id = Model.Carrera.IdEvento })" class="btn-gold">
+                <i class="fas fa-list-check me-1"></i> Inscripciones
+            </a>
+        </div>
+    </div>
+    <div class="card-body-custom p-0">
+        <div style="padding:18px 24px;border-bottom:1px solid var(--border);color:var(--text-muted);font-size:.86rem">
+            <span style="color:var(--gold);font-weight:600">@Model.Carrera.CodigoEvento</span>
+            <span class="mx-2">•</span>
+            @Model.Carrera.FechaEvento.ToString("dd/MM/yyyy HH:mm")
+            <span class="mx-2">•</span>
+            @Model.Carrera.Estado
+        </div>
+
+        @if (!Model.Resultados.Any())
+        {
+            <div class="text-center py-5" style="color:var(--text-muted)">
+                <i class="fas fa-trophy" style="font-size:3rem;opacity:.3"></i>
+                <p class="mt-3">Primero registra caballos inscritos para poder guardar resultados.</p>
+            </div>
+        }
+        else
+        {
+            <div style="overflow-x:auto">
+                <table class="table-hipodromo">
+                    <thead>
+                        <tr>
+                            <th>Final</th>
+                            <th>Salida</th>
+                            <th>Caballo</th>
+                            <th>Tiempo</th>
+                            <th>Premio</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in Model.Resultados)
+                        {
+                            <tr>
+                                <td>@(r.PosicionFinal?.ToString() ?? "—")</td>
+                                <td>@(r.PosicionSalida?.ToString() ?? "—")</td>
+                                <td>
+                                    <span style="font-weight:500">@r.Caballo</span>
+                                    <span style="color:var(--gold);font-size:.78rem;margin-left:6px">@r.CodigoCaballo</span>
+                                </td>
+                                <td>@(r.TiempoSegundos?.ToString("F3") ?? "—")</td>
+                                <td>@(r.PremioObtenido?.ToString("C") ?? "—")</td>
+                                <td>
+                                    @if (r.IdResultado is null)
+                                    {
+                                        <span class="badge-salud badge-warn">Pendiente</span>
+                                    }
+                                    else if (r.Descalificado)
+                                    {
+                                        <span class="badge-salud badge-danger">Descalificado</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-salud badge-ok">Registrado</span>
+                                    }
+                                </td>
+                                <td>
+                                    <a href="@Url.Action("RegistrarResultado", new { id = r.IdInscripcion })" class="@(r.IdResultado is null ? "btn-gold" : "btn-outline-gold")">
+                                        <i class="fas fa-trophy me-1"></i> @(r.IdResultado is null ? "Registrar" : "Editar")
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
