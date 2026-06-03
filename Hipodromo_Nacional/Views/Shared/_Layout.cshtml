@@ -15,8 +15,16 @@
     <link rel="stylesheet" href="~/css/hipodromo.css" />
 </head>
 <body>
+@{
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString();
+    var action = ViewContext.RouteData.Values["action"]?.ToString();
+    var nombre = User.FindFirst("nombre_completo")?.Value ?? User.Identity?.Name ?? "Usuario";
+    var esAdministrador = User.IsInRole("Administrador");
+    var esPropietario = User.IsInRole("Propietario");
+    var esVeterinario = User.IsInRole("Veterinario");
+    var esEncargado = User.IsInRole("Encargado de Establo");
+}
 
-<!-- SIDEBAR -->
 <div class="sidebar" id="sidebar">
     <div class="sidebar-brand">
         <span class="brand-icon">🐴</span>
@@ -28,93 +36,115 @@
 
     <nav class="sidebar-nav">
         <div class="nav-section-label">PRINCIPAL</div>
-        <a href="@Url.Action("Index","Home")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")">
+        <a href="@Url.Action("Index","Home")" class="nav-item @(controller == "Home" ? "active" : "")">
             <i class="fas fa-gauge-high"></i>
             <span>Dashboard</span>
         </a>
 
-        <div class="nav-section-label mt-2">CABALLOS</div>
-        <a href="@Url.Action("Index","Caballos")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Caballos" ? "active" : "")">
-            <i class="fas fa-horse"></i>
-            <span>Gestión de Caballos</span>
-        </a>
+        @if (esPropietario)
+        {
+            <div class="nav-section-label mt-3">CABALLOS</div>
+            <a href="@Url.Action("Index","Caballos")" class="nav-item @(controller == "Caballos" ? "active" : "")">
+                <i class="fas fa-horse"></i>
+                <span>Gestión de Caballos</span>
+            </a>
 
-        <div class="nav-section-label mt-2">VETERINARIA</div>
-        <a href="@Url.Action("Index","HistorialVet")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "HistorialVet" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")">
-            <i class="fas fa-stethoscope"></i>
-            <span>Historial Veterinario</span>
-        </a>
-        <a href="@Url.Action("Certificaciones","HistorialVet")" class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "Certificaciones" ? "active" : "")">
-            <i class="fas fa-certificate"></i>
-            <span>Certificaciones</span>
-        </a>
+            <div class="nav-section-label mt-3">PROPIETARIO</div>
+            <a href="@Url.Action("Index","InscripcionesEventos")" class="nav-item @(controller == "InscripcionesEventos" ? "active" : "")">
+                <i class="fas fa-flag-checkered"></i>
+                <span>Inscribir en Eventos</span>
+            </a>
+            <a href="@Url.Action("Index","Resultados")" class="nav-item @(controller == "Resultados" ? "active" : "")">
+                <i class="fas fa-list-check"></i>
+                <span>Consultar Resultados</span>
+            </a>
+            <a href="@Url.Action("Index","Facturacion")" class="nav-item @(controller == "Facturacion" ? "active" : "")">
+                <i class="fas fa-file-invoice-dollar"></i>
+                <span>Datos de Facturación</span>
+            </a>
+        }
 
-        <div class="nav-section-label mt-2">ESTABLOS</div>
-        <a href="@Url.Action("Index","Establos")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Establos" ? "active" : "")">
-            <i class="fas fa-warehouse"></i>
-            <span>Gestión de Establos</span>
-        </a>
-        <a href="@Url.Action("Index","Asignaciones")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Asignaciones" ? "active" : "")">
-            <i class="fas fa-link"></i>
-            <span>Asignaciones</span>
-        </a>
-<div class="nav-section-label mt-3">CARRERAS</div>
-<a href="@Url.Action("Index","Carreras")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Carreras" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")">
-    <i class="fas fa-flag-checkered"></i>
-    <span>Gestión de Carreras</span>
-</a>
-<a href="@Url.Action("ControlInscripciones","Carreras")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Carreras" && (ViewContext.RouteData.Values["action"]?.ToString() == "ControlInscripciones" || ViewContext.RouteData.Values["action"]?.ToString() == "Inscripciones" || ViewContext.RouteData.Values["action"]?.ToString() == "RegistrarInscripcion") ? "active" : "")">
-    <i class="fas fa-list-check"></i>
-    <span>Control de Inscripciones</span>
-</a>
-        <div class="nav-section-label mt-2">ALIMENTACION</div>
-        <a href="@Url.Action("Index","Suministros")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Suministros" ? "active" : "")">
-            <i class="fas fa-boxes-stacked"></i>
-            <span>Suministros</span>
-        </a>
-        <a href="@Url.Action("Index","Alimentacion")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Alimentacion" ? "active" : "")">
-            <i class="fas fa-bowl-food"></i>
-            <span>Consumo por Caballo</span>
-        </a>
+        @if (esVeterinario)
+        {
+            <div class="nav-section-label mt-3">VETERINARIA</div>
+            <a href="@Url.Action("Index","HistorialVet")" class="nav-item @(controller == "HistorialVet" && action == "Index" ? "active" : "")">
+                <i class="fas fa-stethoscope"></i>
+                <span>Historial Veterinario</span>
+            </a>
+            <a href="@Url.Action("Certificaciones","HistorialVet")" class="nav-item @(controller == "HistorialVet" && action == "Certificaciones" ? "active" : "")">
+                <i class="fas fa-certificate"></i>
+                <span>Certificaciones</span>
+            </a>
+        }
 
-        <div class="nav-section-label mt-2">REPORTES</div>
-        <a href="@Url.Action("Resultados","Reportes")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Reportes" ? "active" : "")">
-            <i class="fas fa-chart-bar"></i>
-            <span>Resultados de Carreras</span>
-        </a>
+        @if (esEncargado)
+        {
+            <div class="nav-section-label mt-3">ESPACIOS</div>
+            <a href="@Url.Action("Index","Asignaciones")" class="nav-item @(controller == "Asignaciones" ? "active" : "")">
+                <i class="fas fa-link"></i>
+                <span>Asignaciones</span>
+            </a>
 
-        <div class="nav-section-label mt-2">FACTURACIÓN</div>
-        <a href="@Url.Action("Index","Facturacion")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Facturacion" ? "active" : "")">
-            <i class="fas fa-file-invoice-dollar"></i>
-            <span>Facturas y Pagos</span>
-        </a>
+            <div class="nav-section-label mt-3">ALIMENTACION</div>
+            <a href="@Url.Action("Index","Suministros")" class="nav-item @(controller == "Suministros" ? "active" : "")">
+                <i class="fas fa-boxes-stacked"></i>
+                <span>Suministros</span>
+            </a>
+            <a href="@Url.Action("Index","Alimentacion")" class="nav-item @(controller == "Alimentacion" ? "active" : "")">
+                <i class="fas fa-bowl-food"></i>
+                <span>Consumo por Caballo</span>
+            </a>
+        }
 
-        <div class="nav-section-label mt-2">PERSONAS</div>
-        <a href="@Url.Action("Index","Propietarios")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Propietarios" ? "active" : "")">
-            <i class="fas fa-user-tie"></i>
-            <span>Propietarios</span>
-        </a>
+        @if (esAdministrador)
+        {
+            <div class="nav-section-label mt-3">ADMINISTRACIÓN</div>
+            <a href="@Url.Action("Index","Establos")" class="nav-item @(controller == "Establos" ? "active" : "")">
+                <i class="fas fa-warehouse"></i>
+                <span>Control de Establos</span>
+            </a>
+            <a href="@Url.Action("Index","Carreras")" class="nav-item @(controller == "Carreras" && action == "Index" ? "active" : "")">
+                <i class="fas fa-flag-checkered"></i>
+                <span>Gestión de Eventos</span>
+            </a>
+            <a href="@Url.Action("ControlInscripciones","Carreras")" class="nav-item @(controller == "Carreras" && (action == "ControlInscripciones" || action == "Inscripciones" || action == "RegistrarInscripcion") ? "active" : "")">
+                <i class="fas fa-clipboard-check"></i>
+                <span>Validación de Inscripciones</span>
+            </a>
+            <a href="@Url.Action("Index","Facturacion")" class="nav-item @(controller == "Facturacion" ? "active" : "")">
+                <i class="fas fa-file-invoice-dollar"></i>
+                <span>Facturación</span>
+            </a>
+        }
     </nav>
+
+    <div style="padding:0 16px 12px 16px;">
+        <a href="@Url.Action("MiUsuario","Cuenta")" class="btn-outline-gold d-block text-center text-decoration-none py-2 @(controller == "Cuenta" && action == "MiUsuario" ? "active" : "")">
+            <i class="fas fa-id-badge me-1"></i> Mi Usuario
+        </a>
+    </div>
 
     <div class="sidebar-footer">
         <i class="fas fa-trophy"></i> Sistema de Gestión Ecuestre
     </div>
 </div>
 
-<!-- CONTENIDO PRINCIPAL -->
 <div class="main-content" id="mainContent">
-
-    <!-- TOPBAR -->
     <header class="topbar">
         <button class="sidebar-toggle" onclick="toggleSidebar()">
             <i class="fas fa-bars"></i>
         </button>
         <div class="topbar-title">@(ViewData["Title"] ?? "Dashboard")</div>
-        <div class="topbar-right">
+        <div class="topbar-right d-flex align-items-center gap-3">
+            <span class="topbar-badge"><i class="fas fa-circle-dot text-success me-1" style="font-size:.65rem"></i> Conectado a la base de datos </span>
+            <span class="text-muted small">@nombre</span>
+            <form asp-controller="Auth" asp-action="Logout" method="post" class="m-0">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-sm btn-outline-secondary">Cerrar sesión</button>
+            </form>
         </div>
     </header>
 
-    <!-- ALERTAS TEMPDATA -->
     <div class="content-area">
         @if (TempData["Exito"] is string msg)
         {

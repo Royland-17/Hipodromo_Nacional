@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Hipodromo_Nacional.Hipodromo.DA;
 using Hipodromo_Nacional.Models;
 using Hipodromo_Nacional.ViewModels;
+using Npgsql;
 
 namespace Hipodromo_Nacional.Hipodromo.BL;
 
@@ -55,9 +56,20 @@ public class CarreraService
 
     public async Task CrearAsync(CarreraViewModel vm)
     {
+        var codigoEvento = vm.CodigoEvento.Trim();
+
+        var codigoDuplicado = await _ctx.Eventos
+            .AsNoTracking()
+            .AnyAsync(e => e.CodigoEvento == codigoEvento);
+
+        if (codigoDuplicado)
+        {
+            throw new InvalidOperationException("Ya existe una carrera con ese codigo de evento.");
+        }
+
         var carrera = new Evento
         {
-            CodigoEvento = vm.CodigoEvento,
+            CodigoEvento = codigoEvento,
             Nombre = vm.Nombre,
             FechaEvento = vm.FechaEvento,
             DistanciaMetros = vm.DistanciaMetros,
@@ -70,7 +82,29 @@ public class CarreraService
         };
 
         _ctx.Eventos.Add(carrera);
-        await _ctx.SaveChangesAsync();
+        try
+        {
+            await _ctx.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (EsViolacionPkEventos(ex))
+        {
+            await SincronizarSecuenciaEventosAsync();
+
+            try
+            {
+                await _ctx.SaveChangesAsync();
+            }
+            catch (DbUpdateException retryEx) when (EsViolacionPkEventos(retryEx))
+            {
+                throw new InvalidOperationException(
+                    "No se pudo guardar la carrera porque la secuencia de IDs de eventos esta desincronizada. Intenta nuevamente.",
+                    retryEx);
+            }
+        }
+        catch (DbUpdateException ex) when (EsCodigoEventoDuplicado(ex))
+        {
+            throw new InvalidOperationException("Ya existe una carrera con ese codigo de evento.", ex);
+        }
     }
 
     public async Task EditarAsync(int id, CarreraViewModel vm)
@@ -165,6 +199,12 @@ public class CarreraService
 
     public async Task CrearInscripcionAsync(InscripcionCarreraViewModel vm)
     {
+        var certificacionVigente = await TieneCertificacionVigenteAsync(vm.IdCaballo);
+        if (!certificacionVigente)
+        {
+            throw new InvalidOperationException("El caballo seleccionado no tiene una certificacion veterinaria vigente.");
+        }
+
         var yaInscrito = await _ctx.Inscripciones
             .AnyAsync(i => i.IdEvento == vm.IdEvento && i.IdCaballo == vm.IdCaballo);
 
@@ -173,18 +213,28 @@ public class CarreraService
             throw new InvalidOperationException("Este caballo ya está inscrito en la carrera.");
         }
 
-        var inscripcion = new Inscripcione
-        {
-            IdEvento = vm.IdEvento,
-            IdCaballo = vm.IdCaballo,
-            FechaInscripcion = DateTime.Now,
-            PosicionSalida = vm.PosicionSalida,
-            IdEstadoInscripcion = vm.IdEstadoInscripcion,
-            Observaciones = vm.Observaciones
-        };
+        await _ctx.Database.ExecuteSqlInterpolatedAsync($"""
+            CALL public.sp_insert_inscripcion(
+                {vm.IdEvento},
+                {vm.IdCaballo},
+                {vm.PosicionSalida},
+                {vm.IdEstadoInscripcion}
+            )
+            """);
 
-        _ctx.Inscripciones.Add(inscripcion);
-        await _ctx.SaveChangesAsync();
+        if (!string.IsNullOrWhiteSpace(vm.Observaciones))
+        {
+            var ultimaInscripcion = await _ctx.Inscripciones
+                .Where(i => i.IdEvento == vm.IdEvento && i.IdCaballo == vm.IdCaballo)
+                .OrderByDescending(i => i.IdInscripcion)
+                .FirstOrDefaultAsync();
+
+            if (ultimaInscripcion is not null)
+            {
+                ultimaInscripcion.Observaciones = vm.Observaciones;
+                await _ctx.SaveChangesAsync();
+            }
+        }
     }
 
     public async Task<ResultadosCarreraViewModel?> ObtenerResultadosAsync(int idEvento)
@@ -277,5 +327,68 @@ public class CarreraService
         resultado.MotivoDescalificacion = vm.Descalificado ? vm.MotivoDescalificacion : null;
 
         await _ctx.SaveChangesAsync();
+
+        await _ctx.Database.ExecuteSqlInterpolatedAsync($"CALL public.sp_calcular_premios({vm.IdEvento})");
+    }
+
+    private async Task<bool> TieneCertificacionVigenteAsync(int idCaballo)
+    {
+        var vigente = await _ctx.Database
+            .SqlQueryRaw<bool>($"SELECT public.fn_certificacion_vigente({idCaballo})")
+            .FirstOrDefaultAsync();
+
+        return vigente;
+    }
+
+    private async Task SincronizarSecuenciaInscripcionesAsync()
+    {
+        await _ctx.Database.ExecuteSqlRawAsync("""
+            SELECT setval(
+                COALESCE(pg_get_serial_sequence('public.inscripciones', 'id_inscripcion'), 'public.inscripciones_id_inscripcion_seq'),
+                COALESCE((SELECT MAX(id_inscripcion) FROM public.inscripciones), 0) + 1,
+                false
+            );
+            """);
+    }
+
+    private async Task SincronizarSecuenciaEventosAsync()
+    {
+        await _ctx.Database.ExecuteSqlRawAsync("""
+            SELECT setval(
+                COALESCE(pg_get_serial_sequence('public.eventos', 'id_evento'), 'public.eventos_id_evento_seq'),
+                COALESCE((SELECT MAX(id_evento) FROM public.eventos), 0) + 1,
+                false
+            );
+            """);
+    }
+
+    private static bool EsViolacionPkInscripciones(Exception ex)
+    {
+        var pgEx = ex as PostgresException
+            ?? ex.InnerException as PostgresException
+            ?? ex.GetBaseException() as PostgresException;
+
+        return pgEx?.SqlState == "23505"
+            && string.Equals(pgEx.ConstraintName, "inscripciones_pkey", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool EsViolacionPkEventos(Exception ex)
+    {
+        var pgEx = ex as PostgresException
+            ?? ex.InnerException as PostgresException
+            ?? ex.GetBaseException() as PostgresException;
+
+        return pgEx?.SqlState == "23505"
+            && string.Equals(pgEx.ConstraintName, "eventos_pkey", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool EsCodigoEventoDuplicado(Exception ex)
+    {
+        var pgEx = ex as PostgresException
+            ?? ex.InnerException as PostgresException
+            ?? ex.GetBaseException() as PostgresException;
+
+        return pgEx?.SqlState == "23505"
+            && string.Equals(pgEx.ConstraintName, "eventos_codigo_evento_key", StringComparison.OrdinalIgnoreCase);
     }
 }

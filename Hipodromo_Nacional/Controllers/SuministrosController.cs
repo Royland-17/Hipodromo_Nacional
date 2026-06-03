@@ -1,9 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Hipodromo_Nacional.Hipodromo.BL;
+using Hipodromo_Nacional.Security;
 using Hipodromo_Nacional.ViewModels;
 
 namespace Hipodromo_Nacional.Controllers;
 
+[Authorize(Roles = AppRoles.Administrador + "," + AppRoles.EncargadoDeEstablo)]
 public class SuministrosController : Controller
 {
     private readonly SuministroService _svc;
@@ -28,7 +31,11 @@ public class SuministrosController : Controller
     {
         try
         {
-            var vm = new SuministroViewModel();
+            var vm = new SuministroViewModel
+            {
+                FechaIngreso = DateOnly.FromDateTime(DateTime.Today),
+                Codigo = await _svc.GenerarCodigoAutomaticoAsync()
+            };
             await _svc.CargarSelectsAsync(vm);
             return View(vm);
         }
@@ -43,6 +50,11 @@ public class SuministrosController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Crear(SuministroViewModel vm)
     {
+        vm.FechaIngreso = DateOnly.FromDateTime(DateTime.Today);
+        vm.Codigo = await _svc.GenerarCodigoAutomaticoAsync();
+        ModelState.Remove(nameof(SuministroViewModel.FechaIngreso));
+        ModelState.Remove(nameof(SuministroViewModel.Codigo));
+
         if (!ModelState.IsValid)
         {
             await _svc.CargarSelectsAsync(vm);
@@ -94,6 +106,23 @@ public class SuministrosController : Controller
             await _svc.CargarSelectsAsync(vm);
             return View(vm);
         }
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Activar(int id)
+    {
+        try
+        {
+            await _svc.ActivarAsync(id);
+            TempData["Exito"] = "Suministro activado.";
+        }
+        catch (Exception ex)
+        {
+            TempData["Error"] = ex.Message;
+        }
+
+        return RedirectToAction(nameof(Index));
     }
 
     [HttpPost]

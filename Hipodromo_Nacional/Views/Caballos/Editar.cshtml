@@ -19,7 +19,7 @@
                     <div class="row g-4">
                         <div class="col-md-4">
                             <label class="form-label-custom">Código *</label>
-                            <input asp-for="Codigo" class="form-control-custom" />
+                            <input asp-for="Codigo" class="form-control-custom" readonly />
                             <span asp-validation-for="Codigo" class="text-danger-custom"></span>
                         </div>
                         <div class="col-md-8">
@@ -56,10 +56,10 @@
                             </select>
                         </div>
                         <div class="col-md-12">
-                            <label class="form-label-custom">Propietario *</label>
-                            <select asp-for="IdPropietario" asp-items="Model.Propietarios" class="form-select-custom">
-                                <option value="">Seleccionar...</option>
-                            </select>
+                            <div class="p-3" style="background:var(--bg-dark);border:1px solid var(--border);border-radius:8px;color:var(--text-muted)">
+                                <i class="fas fa-user-lock me-2"></i>
+                                El propietario esta vinculado al usuario autenticado y no puede cambiarse aqui.
+                            </div>
                         </div>
                         <div class="col-md-6">
                             <div class="d-flex align-items-center gap-3 p-3" style="background:var(--bg-dark);border-radius:8px;border:1px solid var(--border)">

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Hipodromo_Nacional.Hipodromo.DA;
 using Hipodromo_Nacional.Models;
 using Hipodromo_Nacional.ViewModels;
+using Npgsql;
 
 namespace Hipodromo_Nacional.Hipodromo.BL;
 
@@ -66,6 +67,24 @@ public class SuministroService
             .ToListAsync();
     }
 
+    public async Task<string> GenerarCodigoAutomaticoAsync()
+    {
+        for (var intento = 0; intento < 5; intento++)
+        {
+            var codigo = $"SUM-{DateTime.UtcNow:yyyyMMddHHmmssfff}-{Random.Shared.Next(100, 999)}";
+
+            var existe = await _ctx.Suministros
+                .AsNoTracking()
+                .AnyAsync(s => s.Codigo == codigo);
+
+            if (!existe)
+                return codigo;
+        }
+
+        var token = Guid.NewGuid().ToString("N")[..12].ToUpperInvariant();
+        return $"SUM-{token}";
+    }
+
     public async Task CrearAsync(SuministroViewModel vm)
     {
         var idUnidadMedida = await _ctx.TcUnidadMedida
@@ -77,17 +96,43 @@ public class SuministroService
         if (idUnidadMedida <= 0)
             throw new InvalidOperationException("No hay unidad de medida configurada para registrar suministros.");
 
-        await _ctx.Database.ExecuteSqlInterpolatedAsync($"""
-            CALL public.sp_insert_suministro(
-                {vm.Codigo.Trim()},
-                {vm.Codigo.Trim()},
-                {vm.IdTipoSuministro},
-                {vm.IdProveedor},
-                {idUnidadMedida},
-                {vm.CantidadDisponible},
-                {0m}
-            )
-            """);
+        async Task EjecutarInsertAsync(string codigo)
+        {
+            await _ctx.Database.ExecuteSqlInterpolatedAsync($"""
+                CALL public.sp_insert_suministro(
+                    {codigo},
+                    {codigo},
+                    {vm.IdTipoSuministro},
+                    {vm.IdProveedor},
+                    {idUnidadMedida},
+                    {vm.CantidadDisponible},
+                    {0m}
+                )
+                """);
+        }
+
+        var codigoGenerado = await GenerarCodigoAutomaticoAsync();
+        try
+        {
+            await EjecutarInsertAsync(codigoGenerado);
+        }
+        catch (Exception ex) when (EsCodigoSuministroDuplicado(ex))
+        {
+            codigoGenerado = await GenerarCodigoAutomaticoAsync();
+            await EjecutarInsertAsync(codigoGenerado);
+        }
+
+        vm.Codigo = codigoGenerado;
+    }
+
+    private static bool EsCodigoSuministroDuplicado(Exception ex)
+    {
+        var pgEx = ex as PostgresException
+            ?? ex.InnerException as PostgresException
+            ?? ex.GetBaseException() as PostgresException;
+
+        return pgEx?.SqlState == "23505"
+            && string.Equals(pgEx.ConstraintName, "suministros_codigo_key", StringComparison.OrdinalIgnoreCase);
     }
 
     public async Task EditarAsync(int id, SuministroViewModel vm)
@@ -100,10 +145,29 @@ public class SuministroService
                 {true}
             )
             """);
+
+        var actualizados = await _ctx.Suministros
+            .Where(s => s.IdSuministro == id)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(s => s.IdTipoSuministro, vm.IdTipoSuministro));
+
+        if (actualizados == 0)
+            throw new InvalidOperationException("No se encontró el suministro a editar.");
     }
 
     public async Task DesactivarAsync(int id)
     {
         await _ctx.Database.ExecuteSqlInterpolatedAsync($"CALL public.sp_delete_suministro({id})");
+    }
+
+    public async Task ActivarAsync(int id)
+    {
+        var actualizados = await _ctx.Suministros
+            .Where(s => s.IdSuministro == id)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(s => s.Activo, true));
+
+        if (actualizados == 0)
+            throw new InvalidOperationException("No se encontró el suministro a activar.");
     }
 }

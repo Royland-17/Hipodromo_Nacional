@@ -75,7 +75,6 @@ public class CertificacionViewModel : IValidatableObject
                 new[] { nameof(FechaVencimiento) });
     }
 
-    [Required(ErrorMessage = "El número de certificado es obligatorio")]
     [Display(Name = "N° Certificado")]
     public string NumeroCertificado { get; set; } = string.Empty;
 

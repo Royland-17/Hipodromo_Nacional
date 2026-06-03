@@ -118,6 +118,8 @@ public class CrearFacturaViewModel
 public class InscripcionSelectViewModel
 {
     public int IdInscripcion { get; set; }
+    public int IdPropietario { get; set; }
+    public string Propietario { get; set; } = string.Empty;
     public string Evento { get; set; } = string.Empty;
     public string Caballo { get; set; } = string.Empty;
     public DateTime? FechaInscripcion { get; set; }

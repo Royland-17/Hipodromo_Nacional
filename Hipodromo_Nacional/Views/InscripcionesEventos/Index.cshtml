@@ -1,0 +1,122 @@
+@model Hipodromo_Nacional.ViewModels.InscripcionesEventoPageViewModel
+@{
+    ViewData["Title"] = "Inscribir en Eventos";
+}
+
+<div class="card-hipodromo mb-4">
+    <div class="card-header-custom">
+        <h5><i class="fas fa-flag-checkered me-2"></i>Inscribir Caballos en Eventos</h5>
+    </div>
+    <div class="card-body-custom p-0">
+        @if (!Model.EventosDisponibles.Any())
+        {
+            <div class="text-center py-5" style="color:var(--text-muted)">
+                <i class="fas fa-calendar-xmark" style="font-size:3rem;opacity:.3"></i>
+                <p class="mt-3 mb-0">No hay eventos disponibles para inscripción en este momento.</p>
+            </div>
+        }
+        else if (!Model.CaballosDisponibles.Any())
+        {
+            <div class="text-center py-5" style="color:var(--text-muted)">
+                <i class="fas fa-horse" style="font-size:3rem;opacity:.3"></i>
+                <p class="mt-3 mb-0">No tienes caballos activos disponibles para inscribir.</p>
+            </div>
+        }
+        else
+        {
+            <div style="overflow-x:auto">
+                <table class="table-hipodromo">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Evento</th>
+                            <th>Fecha</th>
+                            <th>Estado</th>
+                            <th>Costo Inscripción</th>
+                            <th>Inscritos</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var e in Model.EventosDisponibles)
+                        {
+                            <tr>
+                                <td><span style="color:var(--gold);font-weight:600">@e.CodigoEvento</span></td>
+                                <td style="font-weight:500">@e.Nombre</td>
+                                <td>@e.FechaEvento.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td><span class="badge-salud badge-ok">@e.Estado</span></td>
+                                <td>@e.PrecioInscripcion.ToString("C")</td>
+                                <td>@e.TotalInscritos</td>
+                                <td style="min-width:300px">
+                                    <form asp-action="Inscribir" method="post" class="d-flex gap-2 align-items-center">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="IdEvento" value="@e.IdEvento" />
+                                        <select name="IdCaballo" class="form-control-custom" style="min-width:160px" required>
+                                            <option value="">Selecciona caballo</option>
+                                            @foreach (var c in Model.CaballosDisponibles)
+                                            {
+                                                <option value="@c.IdCaballo">@c.Nombre (@c.Codigo)</option>
+                                            }
+                                        </select>
+                                        <input type="text" name="Observaciones" class="form-control-custom" placeholder="Observaciones (opcional)" maxlength="255" />
+                                        <button type="submit" class="btn-gold" style="white-space:nowrap">
+                                            <i class="fas fa-check me-1"></i> Inscribir
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="card-hipodromo">
+    <div class="card-header-custom">
+        <h5><i class="fas fa-list-check me-2"></i>Mis Inscripciones</h5>
+    </div>
+    <div class="card-body-custom p-0">
+        @if (!Model.MisInscripciones.Any())
+        {
+            <div class="text-center py-5" style="color:var(--text-muted)">
+                <i class="fas fa-clipboard-list" style="font-size:3rem;opacity:.3"></i>
+                <p class="mt-3 mb-0">Aún no registras inscripciones.</p>
+            </div>
+        }
+        else
+        {
+            <div style="overflow-x:auto">
+                <table class="table-hipodromo">
+                    <thead>
+                        <tr>
+                            <th>Evento</th>
+                            <th>Fecha Evento</th>
+                            <th>Caballo</th>
+                            <th>Fecha Inscripción</th>
+                            <th>Posición Salida</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var i in Model.MisInscripciones)
+                        {
+                            <tr>
+                                <td>
+                                    <div style="font-weight:600">@i.Evento</div>
+                                    <div style="font-size:.8rem;color:var(--text-muted)">@i.CodigoEvento</div>
+                                </td>
+                                <td>@(i.FechaEvento?.ToString("dd/MM/yyyy HH:mm") ?? "-")</td>
+                                <td>@i.Caballo</td>
+                                <td>@(i.FechaInscripcion?.ToString("dd/MM/yyyy HH:mm") ?? "-")</td>
+                                <td>@(i.PosicionSalida?.ToString() ?? "-")</td>
+                                <td><span class="badge-salud badge-info">@i.EstadoInscripcion</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

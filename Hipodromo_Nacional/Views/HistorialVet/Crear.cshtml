@@ -18,16 +18,15 @@
                     <div class="row g-4">
                         <div class="col-md-6">
                             <label class="form-label-custom">Caballo *</label>
-                            <select asp-for="IdCaballo" asp-items="Model.Caballos" class="form-select-custom">
+                            <select asp-for="IdCaballo" asp-items="Model.Caballos" class="form-select-custom" id="idCaballoSelect">
                                 <option value="">Seleccionar caballo...</option>
                             </select>
                             <span asp-validation-for="IdCaballo" class="text-danger-custom"></span>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label-custom">Veterinario *</label>
-                            <select asp-for="IdVeterinario" asp-items="Model.Veterinarios" class="form-select-custom">
-                                <option value="">Seleccionar veterinario...</option>
-                            </select>
+                            <input type="hidden" asp-for="IdVeterinario" />
+                            <input type="text" class="form-control-custom" value="@Model.NombreVeterinario" readonly />
                             <span asp-validation-for="IdVeterinario" class="text-danger-custom"></span>
                         </div>
                         <div class="col-md-4">
@@ -45,7 +44,7 @@
                         <input asp-for="FechaRevision" type="hidden" id="fechaRevisionHidden" />
                         <div class="col-md-6">
                             <label class="form-label-custom">Certificación Vinculada</label>
-                            <select asp-for="IdCertificacion" asp-items="Model.Certificaciones" class="form-select-custom">
+                            <select asp-for="IdCertificacion" asp-items="Model.Certificaciones" class="form-select-custom" id="idCertificacionSelect">
                                 <option value="">Ninguna (opcional)</option>
                             </select>
                         </div>
@@ -85,10 +84,44 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
-        document.querySelector('form').addEventListener('submit', function () {
+        const form = document.querySelector('form');
+        const caballoSelect = document.getElementById('idCaballoSelect');
+        const certificacionSelect = document.getElementById('idCertificacionSelect');
+        const urlCertificaciones = '@Url.Action("CertificacionesPorCaballo", "HistorialVet")';
+
+        form.addEventListener('submit', function () {
             const fecha = document.getElementById('fechaRevision').value;
             const hora = document.getElementById('horaRevision').value || '00:00';
             document.getElementById('fechaRevisionHidden').value = fecha + 'T' + hora;
         });
+
+        async function cargarCertificacionesPorCaballo(idCaballo) {
+            certificacionSelect.innerHTML = '<option value="">Ninguna (opcional)</option>';
+
+            if (!idCaballo) {
+                return;
+            }
+
+            const response = await fetch(`${urlCertificaciones}?idCaballo=${encodeURIComponent(idCaballo)}`);
+            if (!response.ok) {
+                return;
+            }
+
+            const data = await response.json();
+            for (const item of data) {
+                const opt = document.createElement('option');
+                opt.value = item.id;
+                opt.textContent = item.numero;
+                certificacionSelect.appendChild(opt);
+            }
+        }
+
+        caballoSelect.addEventListener('change', () => {
+            cargarCertificacionesPorCaballo(caballoSelect.value);
+        });
+
+        if (caballoSelect.value) {
+            cargarCertificacionesPorCaballo(caballoSelect.value);
+        }
     </script>
 }

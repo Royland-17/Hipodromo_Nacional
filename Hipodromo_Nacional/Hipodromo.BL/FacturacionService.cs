@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Hipodromo_Nacional.Hipodromo.DA;
 using Hipodromo_Nacional.Models;
 using Hipodromo_Nacional.ViewModels;
+using Npgsql;
 
 namespace Hipodromo_Nacional.Hipodromo.BL;
 
@@ -12,11 +13,28 @@ public class FacturacionService
 
     public FacturacionService(PostgresContext ctx) => _ctx = ctx;
 
-    public async Task<List<FacturaListViewModel>> ObtenerListaAsync()
+    public async Task<int?> ObtenerIdPropietarioPorUsuarioAsync(string usuarioLogin)
     {
-        return await _ctx.Facturas
+        if (string.IsNullOrWhiteSpace(usuarioLogin))
+            return null;
+
+        return await _ctx.Usuarios
+            .Where(u => u.Usuario1 == usuarioLogin)
+            .Select(u => u.Propietario != null ? (int?)u.Propietario.IdPropietario : null)
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task<List<FacturaListViewModel>> ObtenerListaAsync(int? idPropietario)
+    {
+        var query = _ctx.Facturas
             .Include(f => f.IdPropietarioNavigation).ThenInclude(p => p.IdUsuarioNavigation)
             .Include(f => f.IdEstadoPagoNavigation)
+            .AsQueryable();
+
+        if (idPropietario is not null)
+            query = query.Where(f => f.IdPropietario == idPropietario.Value);
+
+        return await query
             .OrderByDescending(f => f.FechaFactura)
             .Select(f => new FacturaListViewModel
             {
@@ -36,9 +54,9 @@ public class FacturacionService
             .ToListAsync();
     }
 
-    public async Task<FacturaDetalleViewModel?> ObtenerDetalleAsync(int id)
+    public async Task<FacturaDetalleViewModel?> ObtenerDetalleAsync(int id, int? idPropietario)
     {
-        var f = await _ctx.Facturas
+        var query = _ctx.Facturas
             .Include(f => f.IdPropietarioNavigation).ThenInclude(p => p.IdUsuarioNavigation)
             .Include(f => f.IdEstadoPagoNavigation)
             .Include(f => f.DetalleFacturas)
@@ -49,7 +67,13 @@ public class FacturacionService
                     .ThenInclude(i => i.IdCaballoNavigation)
             .Include(f => f.HistorialTransacciones)
                 .ThenInclude(t => t.IdMetodoPagoNavigation)
-            .FirstOrDefaultAsync(f => f.IdFactura == id);
+            .Where(f => f.IdFactura == id)
+            .AsQueryable();
+
+        if (idPropietario is not null)
+            query = query.Where(f => f.IdPropietario == idPropietario.Value);
+
+        var f = await query.FirstOrDefaultAsync();
 
         if (f is null) return null;
 
@@ -93,12 +117,7 @@ public class FacturacionService
 
     public async Task CargarSelectsCrearAsync(CrearFacturaViewModel vm)
     {
-        vm.Propietarios = await _ctx.Propietarios
-            .Include(p => p.IdUsuarioNavigation)
-            .Select(p => new SelectListItem(
-                p.IdUsuarioNavigation.Nombre + " " + p.IdUsuarioNavigation.Apellido1,
-                p.IdPropietario.ToString()))
-            .ToListAsync();
+        await EjecutarEvaluacionPropietariosFrecuentesAsync();
 
         vm.EstadosPago = await _ctx.TcEstadoPagos
             .Select(e => new SelectListItem(e.Descripcion, e.IdEstadoPago.ToString()))
@@ -107,61 +126,175 @@ public class FacturacionService
         vm.InscripcionesDisponibles = await _ctx.Inscripciones
             .Include(i => i.IdEventoNavigation)
             .Include(i => i.IdCaballoNavigation)
+            .ThenInclude(c => c.IdPropietarioNavigation)
+            .ThenInclude(p => p.IdUsuarioNavigation)
             .Where(i => !_ctx.DetalleFacturas.Any(d => d.IdInscripcion == i.IdInscripcion))
             .Select(i => new InscripcionSelectViewModel
             {
                 IdInscripcion    = i.IdInscripcion,
+                IdPropietario    = i.IdCaballoNavigation.IdPropietario,
+                Propietario      = i.IdCaballoNavigation.IdPropietarioNavigation.IdUsuarioNavigation.Nombre + " "
+                                  + i.IdCaballoNavigation.IdPropietarioNavigation.IdUsuarioNavigation.Apellido1,
                 Evento           = i.IdEventoNavigation.Nombre,
                 Caballo          = i.IdCaballoNavigation.Nombre,
                 FechaInscripcion = i.FechaInscripcion,
                 PrecioUnitario   = i.IdEventoNavigation.PrecioInscripcion
             })
             .ToListAsync();
+
+        vm.Propietarios = vm.InscripcionesDisponibles
+            .GroupBy(i => new { i.IdPropietario, i.Propietario })
+            .Select(g => new SelectListItem(g.Key.Propietario, g.Key.IdPropietario.ToString()))
+            .OrderBy(p => p.Text)
+            .ToList();
     }
 
     public async Task CrearAsync(CrearFacturaViewModel vm)
     {
+        await EjecutarEvaluacionPropietariosFrecuentesAsync();
+
+        var numeroFactura = vm.NumeroFactura.Trim();
+
+        var numeroDuplicado = await _ctx.Facturas
+            .AsNoTracking()
+            .AnyAsync(f => f.NumeroFactura == numeroFactura);
+
+        if (numeroDuplicado)
+        {
+            throw new InvalidOperationException("Ya existe una factura con ese numero.");
+        }
+
         var inscripciones = await _ctx.Inscripciones
             .Include(i => i.IdEventoNavigation)
+            .Include(i => i.IdCaballoNavigation)
             .Where(i => vm.InscripcionesSeleccionadas.Contains(i.IdInscripcion))
             .ToListAsync();
 
+        var idsSeleccionadosUnicos = vm.InscripcionesSeleccionadas.Distinct().Count();
+        if (inscripciones.Count != idsSeleccionadosUnicos)
+        {
+            throw new InvalidOperationException("Algunas inscripciones seleccionadas no estan disponibles para facturacion.");
+        }
+
+        if (inscripciones.Any(i => i.IdCaballoNavigation.IdPropietario != vm.IdPropietario))
+        {
+            throw new InvalidOperationException("Solo puedes facturar inscripciones de caballos del propietario seleccionado.");
+        }
+
+        var aplicarDescuentoAutomatico = await DebeAplicarseDescuentoAutomaticoAsync(vm.IdPropietario);
+        var descuentoPct = aplicarDescuentoAutomatico ? 10m : vm.DescuentoPct;
+
         var subtotal = inscripciones.Sum(i => i.IdEventoNavigation.PrecioInscripcion);
-        var montoDescuento = Math.Round(subtotal * vm.DescuentoPct / 100, 2);
+        var montoDescuento = Math.Round(subtotal * descuentoPct / 100, 2);
         var baseImponible = subtotal - montoDescuento;
         var iva = Math.Round(baseImponible * 0.13m, 2);
         var comision = inscripciones.Sum(i => i.IdEventoNavigation.ComisionAdmin);
         var total = baseImponible + iva + comision;
 
-        var factura = new Factura
-        {
-            IdPropietario  = vm.IdPropietario,
-            NumeroFactura  = vm.NumeroFactura,
-            FechaFactura   = vm.FechaFactura,
-            Subtotal       = subtotal,
-            DescuentoPct   = vm.DescuentoPct,
-            MontoDescuento = montoDescuento,
-            BaseImponible  = baseImponible,
-            ImpuestoIva    = iva,
-            ComisionAdmin  = comision,
-            Total          = total,
-            IdEstadoPago   = vm.IdEstadoPago
-        };
+        await using var tx = await _ctx.Database.BeginTransactionAsync();
 
-        _ctx.Facturas.Add(factura);
-        await _ctx.SaveChangesAsync();
-
-        foreach (var ins in inscripciones)
+        try
         {
-            _ctx.DetalleFacturas.Add(new DetalleFactura
+            var factura = new Factura
             {
-                IdFactura      = factura.IdFactura,
-                IdInscripcion  = ins.IdInscripcion,
-                PrecioUnitario = ins.IdEventoNavigation.PrecioInscripcion,
-                Cantidad       = 1,
-                SubtotalLinea  = ins.IdEventoNavigation.PrecioInscripcion
-            });
+                IdPropietario  = vm.IdPropietario,
+                NumeroFactura  = numeroFactura,
+                FechaFactura   = vm.FechaFactura,
+                Subtotal       = subtotal,
+                DescuentoPct   = descuentoPct,
+                MontoDescuento = montoDescuento,
+                BaseImponible  = baseImponible,
+                ImpuestoIva    = iva,
+                ComisionAdmin  = comision,
+                Total          = total,
+                IdEstadoPago   = vm.IdEstadoPago
+            };
+
+            _ctx.Facturas.Add(factura);
+            try
+            {
+                await _ctx.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex) when (EsViolacionPkFacturas(ex))
+            {
+                await SincronizarSecuenciaFacturasAsync();
+
+                try
+                {
+                    await _ctx.SaveChangesAsync();
+                }
+                catch (DbUpdateException retryEx) when (EsViolacionPkFacturas(retryEx))
+                {
+                    throw new InvalidOperationException(
+                        "No se pudo crear la factura porque la secuencia de IDs de facturas esta desincronizada. Intenta nuevamente.",
+                        retryEx);
+                }
+            }
+            catch (DbUpdateException ex) when (EsNumeroFacturaDuplicado(ex))
+            {
+                throw new InvalidOperationException("Ya existe una factura con ese numero.", ex);
+            }
+
+            foreach (var ins in inscripciones)
+            {
+                _ctx.DetalleFacturas.Add(new DetalleFactura
+                {
+                    IdFactura      = factura.IdFactura,
+                    IdInscripcion  = ins.IdInscripcion,
+                    PrecioUnitario = ins.IdEventoNavigation.PrecioInscripcion,
+                    Cantidad       = 1,
+                    SubtotalLinea  = ins.IdEventoNavigation.PrecioInscripcion
+                });
+            }
+            await _ctx.SaveChangesAsync();
+
+            await _ctx.Database.ExecuteSqlInterpolatedAsync($"""
+                CALL public.sp_update_factura(
+                    {factura.IdFactura},
+                    {vm.IdEstadoPago},
+                    {descuentoPct},
+                    {null}
+                )
+                """);
+
+            if (aplicarDescuentoAutomatico)
+            {
+                await ReiniciarDescuentoAutomaticoAsync(vm.IdPropietario);
+            }
+
+            await tx.CommitAsync();
         }
+        catch
+        {
+            await tx.RollbackAsync();
+            throw;
+        }
+    }
+
+    private async Task EjecutarEvaluacionPropietariosFrecuentesAsync()
+    {
+        await _ctx.Database.ExecuteSqlRawAsync("CALL public.sp_evaluar_propietarios_frecuentes()");
+    }
+
+    private async Task<bool> DebeAplicarseDescuentoAutomaticoAsync(int idPropietario)
+    {
+        return await _ctx.Propietarios
+            .AsNoTracking()
+            .Where(p => p.IdPropietario == idPropietario)
+            .Select(p => p.DescuentoProximaFactura ?? false)
+            .FirstOrDefaultAsync();
+    }
+
+    private async Task ReiniciarDescuentoAutomaticoAsync(int idPropietario)
+    {
+        var propietario = await _ctx.Propietarios.FindAsync(idPropietario);
+        if (propietario is null)
+        {
+            return;
+        }
+
+        propietario.DescuentoProximaFactura = false;
+        propietario.FechaUltimaRevisionDescuento = DateTime.Now;
         await _ctx.SaveChangesAsync();
     }
 
@@ -207,5 +340,36 @@ public class FacturacionService
         }
 
         await _ctx.SaveChangesAsync();
+    }
+
+    private async Task SincronizarSecuenciaFacturasAsync()
+    {
+        await _ctx.Database.ExecuteSqlRawAsync("""
+            SELECT setval(
+                COALESCE(pg_get_serial_sequence('public.facturas', 'id_factura'), 'public.facturas_id_factura_seq'),
+                COALESCE((SELECT MAX(id_factura) FROM public.facturas), 0) + 1,
+                false
+            );
+            """);
+    }
+
+    private static bool EsViolacionPkFacturas(Exception ex)
+    {
+        var pgEx = ex as PostgresException
+            ?? ex.InnerException as PostgresException
+            ?? ex.GetBaseException() as PostgresException;
+
+        return pgEx?.SqlState == "23505"
+            && string.Equals(pgEx.ConstraintName, "facturas_pkey", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool EsNumeroFacturaDuplicado(Exception ex)
+    {
+        var pgEx = ex as PostgresException
+            ?? ex.InnerException as PostgresException
+            ?? ex.GetBaseException() as PostgresException;
+
+        return pgEx?.SqlState == "23505"
+            && string.Equals(pgEx.ConstraintName, "facturas_numero_factura_key", StringComparison.OrdinalIgnoreCase);
     }
 }

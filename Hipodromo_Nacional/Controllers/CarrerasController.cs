@@ -1,9 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Hipodromo_Nacional.Hipodromo.BL;
+using Hipodromo_Nacional.Security;
 using Hipodromo_Nacional.ViewModels;
 
 namespace Hipodromo_Nacional.Controllers;
 
+[Authorize(Roles = AppRoles.Administrador)]
 public class CarrerasController : Controller
 {
     private readonly CarreraService _svc;
@@ -68,6 +71,12 @@ public class CarrerasController : Controller
             await _svc.CrearAsync(vm);
             TempData["Exito"] = "Carrera registrada exitosamente.";
             return RedirectToAction(nameof(Index));
+        }
+        catch (InvalidOperationException ex)
+        {
+            ModelState.AddModelError(nameof(vm.CodigoEvento), ex.Message);
+            await _svc.CargarSelectsAsync(vm);
+            return View(vm);
         }
         catch
         {

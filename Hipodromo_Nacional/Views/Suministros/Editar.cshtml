@@ -1,7 +1,6 @@
 @model SuministroViewModel
 @{
     ViewData["Title"] = "Editar Suministro";
-    var tipoDescripcion = Model.TiposSuministro.FirstOrDefault(t => t.Value == Model.IdTipoSuministro.ToString())?.Text ?? string.Empty;
     var fechaIngresoTexto = Model.FechaIngreso.ToString("dd/MM/yyyy");
 }
 
@@ -17,11 +16,10 @@
             <div class="card-body-custom">
         <form asp-action="Editar" method="post">
             <input type="hidden" asp-for="IdSuministro" />
-            <input type="hidden" asp-for="IdTipoSuministro" />
             <input type="hidden" asp-for="FechaIngreso" />
             <div asp-validation-summary="ModelOnly" class="text-danger-custom mb-3"></div>
             <div class="alert-custom alert-info-custom" role="alert">
-                La edición disponible para suministros permite actualizar el proveedor y la cantidad disponible.
+                La edición de suministros permite actualizar tipo, proveedor y cantidad disponible.
             </div>
 
             <div class="row g-4">
@@ -32,7 +30,10 @@
                 </div>
                 <div class="col-md-4">
                     <label asp-for="IdTipoSuministro" class="form-label-custom"></label>
-                    <input class="form-control-custom readonly-field-custom" value="@tipoDescripcion" readonly />
+                    <select asp-for="IdTipoSuministro" asp-items="Model.TiposSuministro" class="form-select-custom">
+                        <option value="">Seleccione...</option>
+                    </select>
+                    <span asp-validation-for="IdTipoSuministro" class="text-danger-custom"></span>
                 </div>
                 <div class="col-md-4">
                     <label asp-for="IdProveedor" class="form-label-custom"></label>

@@ -1,9 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Hipodromo_Nacional.Hipodromo.BL;
+using Hipodromo_Nacional.Security;
 using Hipodromo_Nacional.ViewModels;
 
 namespace Hipodromo_Nacional.Controllers;
 
+[Authorize(Roles = AppRoles.Administrador + "," + AppRoles.EncargadoDeEstablo)]
 public class AlimentacionController : Controller
 {
     private readonly AlimentacionService _svc;
@@ -12,20 +15,12 @@ public class AlimentacionController : Controller
 
     public async Task<IActionResult> Index([FromQuery, Bind(Prefix = "Filtro")] AlimentacionFiltroViewModel filtro)
     {
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(8));
+
         try
         {
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(8));
-
             await _svc.CargarFiltrosAsync(filtro, cts.Token);
-
-            var hayFiltros = filtro.IdCaballo.HasValue
-                             || filtro.IdTipoSuministro.HasValue
-                             || filtro.FechaDesde.HasValue
-                             || filtro.FechaHasta.HasValue;
-
-            var lista = hayFiltros
-                ? await _svc.ObtenerListaAsync(filtro, cts.Token)
-                : [];
+            var lista = await _svc.ObtenerListaAsync(filtro, cts.Token);
 
             var vm = new AlimentacionIndexViewModel
             {
@@ -37,7 +32,12 @@ public class AlimentacionController : Controller
         catch
         {
             TempData["Error"] = "No se pudo conectar a Supabase. Intenta de nuevo.";
-            return View(new AlimentacionIndexViewModel());
+            await _svc.CargarFiltrosAsync(filtro, cts.Token);
+            return View(new AlimentacionIndexViewModel
+            {
+                Filtro = filtro,
+                Registros = []
+            });
         }
     }
 

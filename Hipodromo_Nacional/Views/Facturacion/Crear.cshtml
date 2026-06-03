@@ -35,7 +35,7 @@
                         </div>
                         <div class="col-md-4">
                             <label class="form-label-custom">Propietario *</label>
-                            <select asp-for="IdPropietario" asp-items="Model.Propietarios" class="form-select-custom">
+                            <select asp-for="IdPropietario" asp-items="Model.Propietarios" class="form-select-custom" id="propietarioSelect">
                                 <option value="">Seleccionar...</option>
                             </select>
                             <span asp-validation-for="IdPropietario" class="text-danger-custom"></span>
@@ -48,6 +48,7 @@
                         <div class="col-md-4">
                             <label class="form-label-custom">Descuento (%)</label>
                             <input asp-for="DescuentoPct" type="number" step="0.01" min="0" max="100" class="form-control-custom" placeholder="0" />
+
                         </div>
                         <div class="col-md-4">
                             <label class="form-label-custom">Estado de Pago *</label>
@@ -85,6 +86,7 @@
                                                 <tr style="cursor:pointer" onclick="this.querySelector('input').click()">
                                                     <td>
                                                         <input type="checkbox" name="InscripcionesSeleccionadas" value="@ins.IdInscripcion"
+                                                            data-propietario-id="@ins.IdPropietario"
                                                                style="accent-color:var(--gold);width:16px;height:16px" />
                                                     </td>
                                                     <td style="font-size:.85rem">@ins.Evento</td>
@@ -114,4 +116,49 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const propietarioSelect = document.getElementById('propietarioSelect');
+            const checkboxes = Array.from(document.querySelectorAll('input[name="InscripcionesSeleccionadas"]'));
+
+            if (!propietarioSelect || checkboxes.length === 0) {
+                return;
+            }
+
+            function actualizarPropietarioDesdeSeleccion() {
+                const seleccionados = checkboxes.filter(cb => cb.checked);
+                const propietarios = [...new Set(seleccionados.map(cb => cb.dataset.propietarioId).filter(Boolean))];
+
+                if (propietarios.length === 0) {
+                    propietarioSelect.disabled = false;
+                    return;
+                }
+
+                const propietarioUnico = propietarios[0];
+                propietarioSelect.value = propietarioUnico;
+                propietarioSelect.disabled = true;
+            }
+
+            checkboxes.forEach(cb => {
+                cb.addEventListener('change', () => {
+                    if (cb.checked) {
+                        const seleccionados = checkboxes.filter(x => x.checked && x !== cb);
+                        const propietarioActual = seleccionados.length > 0
+                            ? seleccionados[0].dataset.propietarioId
+                            : null;
+
+                        if (propietarioActual && cb.dataset.propietarioId !== propietarioActual) {
+                            cb.checked = false;
+                            alert('Solo puedes seleccionar inscripciones de un mismo propietario por factura.');
+                            return;
+                        }
+                    }
+
+                    actualizarPropietarioDesdeSeleccion();
+                });
+            });
+
+            actualizarPropietarioDesdeSeleccion();
+        })();
+    </script>
 }

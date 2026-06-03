@@ -7,7 +7,6 @@ public class SuministroViewModel
 {
     public int IdSuministro { get; set; }
 
-    [Required(ErrorMessage = "El codigo es obligatorio")]
     [StringLength(30)]
     [Display(Name = "Codigo")]
     public string Codigo { get; set; } = string.Empty;

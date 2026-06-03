@@ -1,0 +1,51 @@
+@model Hipodromo_Nacional.ViewModels.UsuarioActualViewModel
+@{
+    ViewData["Title"] = "Mi Usuario";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card-hipodromo">
+            <div class="card-header-custom">
+                <h5><i class="fas fa-id-card me-2"></i>Detalle del Usuario Actual</h5>
+                <a href="@Url.Action("Index", "Home")" class="btn-outline-gold">
+                    <i class="fas fa-arrow-left me-1"></i> Volver
+                </a>
+            </div>
+            <div class="card-body-custom">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label class="form-label-custom">ID Usuario</label>
+                        <input class="form-control-custom" value="@Model.IdUsuario" readonly />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label-custom">Usuario</label>
+                        <input class="form-control-custom" value="@Model.Usuario" readonly />
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label-custom">Nombre Completo</label>
+                        <input class="form-control-custom" value="@Model.NombreCompleto" readonly />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label-custom">Rol</label>
+                        <input class="form-control-custom" value="@Model.Rol" readonly />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label-custom">Identificación</label>
+                        <input class="form-control-custom" value="@Model.Identificacion" readonly />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label-custom">Estado</label>
+                        <input class="form-control-custom" value="@(Model.Activo ? "Activo" : "Inactivo")" readonly />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label-custom">Perfil Asociado</label>
+                        <input class="form-control-custom"
+                               value="@(Model.IdPropietario is not null ? $"Propietario #{Model.IdPropietario}" : Model.IdVeterinario is not null ? $"Veterinario #{Model.IdVeterinario}" : "Sin perfil adicional")"
+                               readonly />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

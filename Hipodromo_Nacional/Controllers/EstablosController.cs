@@ -1,9 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Hipodromo_Nacional.Hipodromo.BL;
+using Hipodromo_Nacional.Security;
 using Hipodromo_Nacional.ViewModels;
 
 namespace Hipodromo_Nacional.Controllers;
 
+[Authorize(Roles = AppRoles.Administrador)]
 public class EstablosController : Controller
 {
     private readonly EstabloService _svc;

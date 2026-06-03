@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Hipodromo_Nacional.Hipodromo.DA;
 using Hipodromo_Nacional.Hipodromo.BL;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,8 +11,23 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddMemoryCache();
+builder.Services
+    .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Auth/Login";
+        options.AccessDeniedPath = "/Auth/AccessDenied";
+        options.SlidingExpiration = true;
+        options.ExpireTimeSpan = TimeSpan.FromHours(8);
+    });
+builder.Services.AddAuthorization();
 
-var connectionString = builder.Configuration.GetConnectionString("SupabaseConnection");
+var connectionString = builder.Configuration.GetConnectionString("LocalPostgresConnection")
+    ?? builder.Configuration.GetConnectionString("SupabaseConnection");
+
+if (string.IsNullOrWhiteSpace(connectionString))
+    throw new InvalidOperationException("No se encontro cadena de conexion configurada.");
+
 builder.Services.AddDbContext<PostgresContext>(options =>
     options.UseNpgsql(connectionString));
 
@@ -22,6 +38,9 @@ builder.Services.AddScoped<PropietarioService>();
 builder.Services.AddScoped<SuministroService>();
 builder.Services.AddScoped<AlimentacionService>();
 builder.Services.AddScoped<FacturacionService>();
+builder.Services.AddScoped<InscripcionesEventoService>();
+builder.Services.AddScoped<ResultadosService>();
+builder.Services.AddScoped<AuthService>();
 
 // ==========================================
 // 2. CONSTRUCCIÓN DE LA APLICACIÓN
@@ -42,10 +61,11 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Auth}/{action=Login}/{id?}");
 
 app.Run();

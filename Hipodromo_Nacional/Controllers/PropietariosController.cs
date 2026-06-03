@@ -1,6 +1,8 @@
 using Hipodromo_Nacional.Hipodromo.BL;
 using Hipodromo_Nacional.Models;
+using Hipodromo_Nacional.Security;
 using Hipodromo_Nacional.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +10,7 @@ using Npgsql;
 
 namespace Hipodromo_Nacional.Controllers;
 
+[Authorize(Roles = AppRoles.Administrador)]
 public class PropietariosController : Controller
 {
     private readonly PropietarioService _service;
@@ -84,9 +87,25 @@ public class PropietariosController : Controller
             TempData["Exito"] = $"Propietario \"{vm.Nombre} {vm.Apellido1}\" registrado exitosamente.";
             return RedirectToAction(nameof(Index));
         }
-        catch (DbUpdateException)
+        catch (DbUpdateException ex)
         {
-            ModelState.AddModelError("", "El usuario o identificación ya existen.");
+            var pgEx = ex.InnerException as PostgresException
+                ?? ex.GetBaseException() as PostgresException;
+            var sqlState = pgEx?.SqlState;
+            var constraintName = pgEx?.ConstraintName;
+            var mensaje = sqlState switch
+            {
+                "23505" when string.Equals(constraintName, "usuarios_pkey", StringComparison.OrdinalIgnoreCase)
+                    => "No se pudo guardar el propietario porque la secuencia de usuarios está desincronizada. Intente de nuevo.",
+                "23505" when string.Equals(constraintName, "propietarios_pkey", StringComparison.OrdinalIgnoreCase)
+                    => "No se pudo guardar el propietario porque la secuencia de propietarios está desincronizada. Intente de nuevo.",
+                "23505" => "El usuario o la identificación ya existen.",
+                "23503" => "La dirección seleccionada no es válida. Seleccione nuevamente país, provincia, cantón, distrito y barrio.",
+                "57014" => "No se pudo guardar el propietario porque la operación superó el tiempo de espera. Intente de nuevo.",
+                _ => "No se pudo guardar el propietario por un error de base de datos. Revise los datos e intente de nuevo."
+            };
+
+            ModelState.AddModelError("", mensaje);
             var recargado = await _service.RecargarDropdownsCreateAsync(MapToCreateDto(vm));
             ApplyDropdowns(vm, recargado);
             return View(vm);
@@ -95,6 +114,10 @@ public class PropietariosController : Controller
         {
             var mensaje = ex.SqlState switch
             {
+                "23505" when string.Equals(ex.ConstraintName, "usuarios_pkey", StringComparison.OrdinalIgnoreCase)
+                    => "No se pudo guardar el propietario porque la secuencia de usuarios está desincronizada. Intente de nuevo.",
+                "23505" when string.Equals(ex.ConstraintName, "propietarios_pkey", StringComparison.OrdinalIgnoreCase)
+                    => "No se pudo guardar el propietario porque la secuencia de propietarios está desincronizada. Intente de nuevo.",
                 "23505" => "El usuario o la identificación ya existen.",
                 "23503" => "La dirección seleccionada no es válida. Seleccione nuevamente país, provincia, cantón, distrito y barrio.",
                 "25P02" => "No se pudo guardar el propietario porque una operación anterior dentro de la transacción falló. Revise los datos e intente de nuevo.",

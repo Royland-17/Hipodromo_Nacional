@@ -18,7 +18,7 @@
                     <div class="row g-4">
                         <div class="col-md-8">
                             <label class="form-label-custom">N° Certificado *</label>
-                            <input asp-for="NumeroCertificado" class="form-control-custom" placeholder="CERT-2026-001" />
+                            <input asp-for="NumeroCertificado" class="form-control-custom" readonly />
                             <span asp-validation-for="NumeroCertificado" class="text-danger-custom"></span>
                         </div>
                         <div class="col-md-4">
@@ -36,9 +36,8 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label-custom">Veterinario *</label>
-                            <select asp-for="IdVeterinario" asp-items="Model.Veterinarios" class="form-select-custom">
-                                <option value="">Seleccionar veterinario...</option>
-                            </select>
+                            <input type="hidden" asp-for="IdVeterinario" />
+                            <input type="text" class="form-control-custom" value="@Model.NombreVeterinario" readonly />
                             <span asp-validation-for="IdVeterinario" class="text-danger-custom"></span>
                         </div>
                         <div class="col-md-6">

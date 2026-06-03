@@ -7,7 +7,6 @@ public class CaballoViewModel
 {
     public int IdCaballo { get; set; }
 
-    [Required(ErrorMessage = "El código es obligatorio")]
     [Display(Name = "Código")]
     public string Codigo { get; set; } = string.Empty;
 
@@ -36,7 +35,6 @@ public class CaballoViewModel
     [Display(Name = "Estado de Salud")]
     public int IdEstadoSalud { get; set; }
 
-    [Required]
     [Display(Name = "Propietario")]
     public int IdPropietario { get; set; }
 

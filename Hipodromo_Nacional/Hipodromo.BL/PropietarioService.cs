@@ -3,6 +3,7 @@ using Hipodromo_Nacional.Hipodromo.DA;
 using Hipodromo_Nacional.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Npgsql;
 
 namespace Hipodromo_Nacional.Hipodromo.BL;
 
@@ -69,87 +70,222 @@ public sealed class PropietarioService
     public async Task CrearAsync(PropietarioCreateDto dto)
     {
         var totalTimer = Stopwatch.StartNew();
+        var usuario = dto.Usuario.Trim();
+        var identificacion = dto.Identificacion.Trim();
+        int? idUsuarioExistenteSinPropietario = null;
 
-        _logger.LogInformation("Inicio CrearAsync para usuario {Usuario}", dto.Usuario);
+        _logger.LogInformation("Inicio CrearAsync para usuario {Usuario}", usuario);
 
-        var precheckTimer = Stopwatch.StartNew();
-        var existeDuplicado = await _db.Usuarios
+        var conflictos = await _db.Usuarios
             .AsNoTracking()
-            .AnyAsync(u => u.Usuario1 == dto.Usuario || u.Identificacion == dto.Identificacion);
-        precheckTimer.Stop();
+            .Where(u => u.Usuario1 == usuario || u.Identificacion == identificacion)
+            .Select(u => new
+            {
+                u.IdUsuario,
+                u.Usuario1,
+                u.Identificacion,
+                TienePropietario = _db.Propietarios.Any(p => p.IdUsuario == u.IdUsuario)
+            })
+            .ToListAsync();
 
-        _logger.LogInformation("Pre-check duplicados completado en {ElapsedMs} ms para usuario {Usuario}", precheckTimer.ElapsedMilliseconds, dto.Usuario);
+        var hayDuplicadoReal = conflictos.Any(c => c.TienePropietario) ||
+                               conflictos.Select(c => c.IdUsuario).Distinct().Count() > 1;
 
-        if (existeDuplicado)
+        if (hayDuplicadoReal)
             throw new DbUpdateException("El usuario o la identificación ya existen.");
+
+        idUsuarioExistenteSinPropietario = conflictos
+            .FirstOrDefault(c => !c.TienePropietario)?.IdUsuario;
 
         var previousTimeout = _db.Database.GetCommandTimeout();
         _db.Database.SetCommandTimeout(90);
 
         try
         {
-            try
+            async Task EjecutarInsertUsuarioAsync()
             {
-                var spUsuarioTimer = Stopwatch.StartNew();
                 await _db.Database.ExecuteSqlInterpolatedAsync($"""
                     CALL public.sp_insert_usuario(
                         {2},
-                        {dto.Usuario},
+                        {usuario},
                         {dto.Contrasena},
                         {dto.Nombre},
                         {dto.Apellido1},
                         {dto.Apellido2},
-                        {dto.Identificacion}
+                        {identificacion}
                     )
                     """);
-                spUsuarioTimer.Stop();
-                _logger.LogInformation("sp_insert_usuario completado en {ElapsedMs} ms para usuario {Usuario}", spUsuarioTimer.ElapsedMilliseconds, dto.Usuario);
             }
-            catch (Exception ex) when (IsTransient(ex) || ex is TimeoutException)
+
+            if (!idUsuarioExistenteSinPropietario.HasValue)
             {
-                _logger.LogWarning(ex, "sp_insert_usuario lanzó error transitorio para usuario {Usuario}. Verificando si inserción se completó.", dto.Usuario);
+                try
+                {
+                    var spUsuarioTimer = Stopwatch.StartNew();
+                    await EjecutarInsertUsuarioAsync();
+                    spUsuarioTimer.Stop();
+                    _logger.LogInformation("sp_insert_usuario completado en {ElapsedMs} ms para usuario {Usuario}", spUsuarioTimer.ElapsedMilliseconds, usuario);
+                }
+                catch (Exception ex) when (EsViolacionPkUsuarios(ex))
+                {
+                    _logger.LogWarning(ex, "sp_insert_usuario falló por usuarios_pkey para usuario {Usuario}. Se sincroniza secuencia y se reintenta una vez.", usuario);
 
-                var existsAfterTimeout = await _db.Usuarios
-                    .AsNoTracking()
-                    .AnyAsync(u => u.Usuario1 == dto.Usuario);
+                    await SincronizarSecuenciaUsuariosAsync();
+                    await EjecutarInsertUsuarioAsync();
+                }
+                catch (Exception ex) when ((IsTransient(ex) || ex is TimeoutException) && ex.GetBaseException() is not PostgresException)
+                {
+                    _logger.LogWarning(ex, "sp_insert_usuario lanzó error transitorio para usuario {Usuario}. Verificando si inserción se completó.", usuario);
 
-                if (!existsAfterTimeout)
-                    throw;
+                    var existsAfterTimeout = await _db.Usuarios
+                        .AsNoTracking()
+                        .AnyAsync(u => u.Usuario1 == usuario);
 
-                _logger.LogWarning("sp_insert_usuario reportó timeout/error, pero usuario {Usuario} existe en DB; se continúa con inserción de propietario.", dto.Usuario);
+                    if (!existsAfterTimeout)
+                        throw;
+
+                    _logger.LogWarning("sp_insert_usuario reportó timeout/error, pero usuario {Usuario} existe en DB; se continúa con inserción de propietario.", usuario);
+                }
+                catch (PostgresException ex) when (ex.SqlState == "23505")
+                {
+                    var idReusado = await _db.Usuarios
+                        .AsNoTracking()
+                        .Where(u => u.Usuario1 == usuario || u.Identificacion == identificacion)
+                        .Select(u => u.IdUsuario)
+                        .FirstOrDefaultAsync();
+
+                    if (idReusado <= 0)
+                        throw;
+
+                    var yaTienePropietario = await _db.Propietarios
+                        .AsNoTracking()
+                        .AnyAsync(p => p.IdUsuario == idReusado);
+
+                    if (yaTienePropietario)
+                        throw;
+
+                    idUsuarioExistenteSinPropietario = idReusado;
+                    _logger.LogWarning("sp_insert_usuario devolvió 23505 para usuario {Usuario}, pero se reutiliza idUsuario {IdUsuario} sin propietario asociado.", usuario, idReusado);
+                }
             }
 
             var selectUsuarioTimer = Stopwatch.StartNew();
-            var idUsuario = await _db.Usuarios
-                .AsNoTracking()
-                .Where(u => u.Usuario1 == dto.Usuario)
-                .Select(u => u.IdUsuario)
-                .SingleOrDefaultAsync();
+            var idUsuario = idUsuarioExistenteSinPropietario
+                ?? await _db.Usuarios
+                    .AsNoTracking()
+                    .Where(u => u.Usuario1 == usuario)
+                    .Select(u => u.IdUsuario)
+                    .SingleOrDefaultAsync();
             selectUsuarioTimer.Stop();
 
-            _logger.LogInformation("Lookup de IdUsuario completado en {ElapsedMs} ms para usuario {Usuario}", selectUsuarioTimer.ElapsedMilliseconds, dto.Usuario);
+            _logger.LogInformation("Lookup de IdUsuario completado en {ElapsedMs} ms para usuario {Usuario}", selectUsuarioTimer.ElapsedMilliseconds, usuario);
 
             if (idUsuario <= 0)
                 throw new InvalidOperationException("No fue posible obtener el usuario creado.");
 
             var spPropietarioTimer = Stopwatch.StartNew();
-            await _db.Database.ExecuteSqlInterpolatedAsync($"""
-                CALL public.sp_insert_propietario(
-                    {idUsuario},
-                    {dto.IdBarrio},
-                    {dto.DireccionExacta}
-                )
-                """);
+            try
+            {
+                async Task EjecutarInsertPropietarioAsync()
+                {
+                    await _db.Database.ExecuteSqlInterpolatedAsync($"""
+                        CALL public.sp_insert_propietario(
+                            {idUsuario},
+                            {dto.IdBarrio},
+                            {dto.DireccionExacta}
+                        )
+                        """);
+                }
+
+                await EjecutarInsertPropietarioAsync();
+            }
+            catch (Exception ex) when (EsViolacionPkPropietarios(ex))
+            {
+                _logger.LogWarning(ex, "sp_insert_propietario falló por propietarios_pkey para idUsuario {IdUsuario}. Se sincroniza secuencia y se reintenta una vez.", idUsuario);
+
+                await SincronizarSecuenciaPropietariosAsync();
+
+                await _db.Database.ExecuteSqlInterpolatedAsync($"""
+                    CALL public.sp_insert_propietario(
+                        {idUsuario},
+                        {dto.IdBarrio},
+                        {dto.DireccionExacta}
+                    )
+                    """);
+            }
+            catch (PostgresException ex) when (ex.SqlState == "23505")
+            {
+                var yaExiste = await _db.Propietarios
+                    .AsNoTracking()
+                    .AnyAsync(p => p.IdUsuario == idUsuario);
+
+                if (!yaExiste)
+                    throw;
+
+                _logger.LogWarning("sp_insert_propietario devolvió 23505 para idUsuario {IdUsuario}, pero el propietario ya existe; se continúa como operación idempotente.", idUsuario);
+            }
             spPropietarioTimer.Stop();
 
-            _logger.LogInformation("sp_insert_propietario completado en {ElapsedMs} ms para usuario {Usuario} (idUsuario {IdUsuario})", spPropietarioTimer.ElapsedMilliseconds, dto.Usuario, idUsuario);
+            _logger.LogInformation("sp_insert_propietario completado en {ElapsedMs} ms para usuario {Usuario} (idUsuario {IdUsuario})", spPropietarioTimer.ElapsedMilliseconds, usuario, idUsuario);
         }
         finally
         {
             totalTimer.Stop();
             _db.Database.SetCommandTimeout(previousTimeout);
-            _logger.LogInformation("CrearAsync finalizó en {ElapsedMs} ms para usuario {Usuario}", totalTimer.ElapsedMilliseconds, dto.Usuario);
+            _logger.LogInformation("CrearAsync finalizó en {ElapsedMs} ms para usuario {Usuario}", totalTimer.ElapsedMilliseconds, usuario);
         }
+    }
+
+    private async Task SincronizarSecuenciaUsuariosAsync()
+    {
+        await _db.Database.ExecuteSqlRawAsync("""
+            DO $$
+            DECLARE
+                seq_name text;
+                max_id bigint;
+            BEGIN
+                SELECT pg_get_serial_sequence('public.usuarios', 'id_usuario') INTO seq_name;
+
+                IF seq_name IS NOT NULL THEN
+                    SELECT COALESCE(MAX(id_usuario), 0) INTO max_id FROM public.usuarios;
+                    EXECUTE format('SELECT setval(%L, %s, true)', seq_name, GREATEST(max_id, 1));
+                END IF;
+            END
+            $$;
+            """);
+    }
+
+    private async Task SincronizarSecuenciaPropietariosAsync()
+    {
+        await _db.Database.ExecuteSqlRawAsync("""
+            DO $$
+            DECLARE
+                seq_name text;
+                max_id bigint;
+            BEGIN
+                SELECT pg_get_serial_sequence('public.propietarios', 'id_propietario') INTO seq_name;
+
+                IF seq_name IS NOT NULL THEN
+                    SELECT COALESCE(MAX(id_propietario), 0) INTO max_id FROM public.propietarios;
+                    EXECUTE format('SELECT setval(%L, %s, true)', seq_name, GREATEST(max_id, 1));
+                END IF;
+            END
+            $$;
+            """);
+    }
+
+    private static bool EsViolacionPkUsuarios(Exception ex)
+    {
+        var pgEx = ex.GetBaseException() as PostgresException;
+        return pgEx?.SqlState == "23505" &&
+               string.Equals(pgEx.ConstraintName, "usuarios_pkey", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool EsViolacionPkPropietarios(Exception ex)
+    {
+        var pgEx = ex.GetBaseException() as PostgresException;
+        return pgEx?.SqlState == "23505" &&
+               string.Equals(pgEx.ConstraintName, "propietarios_pkey", StringComparison.OrdinalIgnoreCase);
     }
 
     public async Task<PropietarioEditDto?> ObtenerEditDtoAsync(int id)
