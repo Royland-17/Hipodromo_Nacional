@@ -7,7 +7,6 @@ public class CarreraViewModel
 {
     public int IdEvento { get; set; }
 
-    [Required(ErrorMessage = "El código es obligatorio")]
     [Display(Name = "Código")]
     public string CodigoEvento { get; set; } = string.Empty;
 

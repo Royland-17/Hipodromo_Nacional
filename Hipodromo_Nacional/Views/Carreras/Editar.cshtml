@@ -18,8 +18,8 @@
                     <div class="row g-4">
                         <div class="col-md-4">
                             <label class="form-label-custom">Código *</label>
-                            <input asp-for="CodigoEvento" class="form-control-custom" />
-                            <span asp-validation-for="CodigoEvento" class="text-danger-custom"></span>
+                            <input class="form-control-custom" value="@Model.CodigoEvento" readonly />
+                            <small style="color:var(--text-muted)">Generado automáticamente por el sistema.</small>
                         </div>
                         <div class="col-md-8">
                             <label class="form-label-custom">Nombre *</label>
