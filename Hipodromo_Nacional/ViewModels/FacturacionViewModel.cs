@@ -92,7 +92,7 @@ public class CrearFacturaViewModel
     [Display(Name = "Propietario")]
     public int IdPropietario { get; set; }
 
-    [Required]
+  
     [Display(Name = "N° Factura")]
     public string NumeroFactura { get; set; } = string.Empty;
 
