@@ -17,6 +17,7 @@ builder.Services.AddDbContext<PostgresContext>(options =>
 
 builder.Services.AddScoped<CaballoService>();
 builder.Services.AddScoped<EstabloService>();
+builder.Services.AddScoped<CarreraService>();
 builder.Services.AddScoped<PropietarioService>();
 builder.Services.AddScoped<SuministroService>();
 builder.Services.AddScoped<AlimentacionService>();
