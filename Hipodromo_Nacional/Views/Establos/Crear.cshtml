@@ -16,11 +16,6 @@
                 <form asp-action="Crear" method="post">
                     @Html.AntiForgeryToken()
                     <div class="row g-4">
-                        <div class="col-md-4">
-                            <label class="form-label-custom">Código *</label>
-                            <input asp-for="Codigo" class="form-control-custom" placeholder="EST-001" />
-                            <span asp-validation-for="Codigo" class="text-danger-custom"></span>
-                        </div>
                         <div class="col-md-8">
                             <label class="form-label-custom">Nombre *</label>
                             <input asp-for="Nombre" class="form-control-custom" placeholder="Nombre del establo" />

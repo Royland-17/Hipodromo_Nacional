@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Hipodromo_Nacional.Hipodromo.DA;
 using Hipodromo_Nacional.Models;
 using Hipodromo_Nacional.ViewModels;
+using Npgsql;
 
 namespace Hipodromo_Nacional.Hipodromo.BL;
 
@@ -47,16 +48,28 @@ public class EstabloService
 
     public async Task CrearAsync(EstabloViewModel vm)
     {
+        var codigo = await GenerarCodigoAutomaticoAsync();
+
         var establo = new Establo
         {
-            Codigo = vm.Codigo,
+            Codigo = codigo,
             Nombre = vm.Nombre,
             Ubicacion = vm.Ubicacion,
             Capacidad = vm.Capacidad,
             IdEstadoEstablo = vm.IdEstadoEstablo
         };
+
         _ctx.Establos.Add(establo);
-        await _ctx.SaveChangesAsync();
+
+        try
+        {
+            await _ctx.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (EsCodigoEstabloDuplicado(ex))
+        {
+            establo.Codigo = await GenerarCodigoAutomaticoAsync();
+            await _ctx.SaveChangesAsync();
+        }
     }
 
     public async Task EditarAsync(int id, EstabloViewModel vm)
@@ -64,13 +77,46 @@ public class EstabloService
         var establo = await _ctx.Establos.FindAsync(id)
             ?? throw new KeyNotFoundException();
 
-        establo.Codigo = vm.Codigo;
         establo.Nombre = vm.Nombre;
         establo.Ubicacion = vm.Ubicacion;
         establo.Capacidad = vm.Capacidad;
         establo.IdEstadoEstablo = vm.IdEstadoEstablo;
 
         await _ctx.SaveChangesAsync();
+    }
+
+    private async Task<string> GenerarCodigoAutomaticoAsync()
+    {
+        var prefijo = $"EST-{DateTime.Now:yyyy}-";
+
+        var codigos = await _ctx.Establos
+            .AsNoTracking()
+            .Where(e => e.Codigo.StartsWith(prefijo))
+            .Select(e => e.Codigo)
+            .ToListAsync();
+
+        var maxConsecutivo = 0;
+        foreach (var codigo in codigos)
+        {
+            if (string.IsNullOrWhiteSpace(codigo) || codigo.Length <= prefijo.Length)
+                continue;
+
+            var sufijo = codigo[prefijo.Length..];
+            if (int.TryParse(sufijo, out var consecutivo) && consecutivo > maxConsecutivo)
+                maxConsecutivo = consecutivo;
+        }
+
+        return $"{prefijo}{(maxConsecutivo + 1):D6}";
+    }
+
+    private static bool EsCodigoEstabloDuplicado(Exception ex)
+    {
+        var pgEx = ex as PostgresException
+            ?? ex.InnerException as PostgresException
+            ?? ex.GetBaseException() as PostgresException;
+
+        return pgEx?.SqlState == "23505"
+            && string.Equals(pgEx.ConstraintName, "establos_codigo_key", StringComparison.OrdinalIgnoreCase);
     }
 
     // ── Asignaciones ──────────────────────────────────────────────────────

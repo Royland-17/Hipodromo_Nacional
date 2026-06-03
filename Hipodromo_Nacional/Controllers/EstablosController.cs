@@ -43,9 +43,18 @@ public class EstablosController : Controller
             await _svc.CargarSelectsAsync(vm);
             return View(vm);
         }
-        await _svc.CrearAsync(vm);
-        TempData["Exito"] = "Establo creado exitosamente.";
-        return RedirectToAction(nameof(Index));
+        try
+        {
+            await _svc.CrearAsync(vm);
+            TempData["Exito"] = "Establo creado exitosamente.";
+            return RedirectToAction(nameof(Index));
+        }
+        catch (InvalidOperationException ex)
+        {
+            ModelState.AddModelError(string.Empty, ex.Message);
+            await _svc.CargarSelectsAsync(vm);
+            return View(vm);
+        }
     }
 
     public async Task<IActionResult> Editar(int id)
@@ -72,11 +81,24 @@ public class EstablosController : Controller
     {
         if (!ModelState.IsValid)
         {
+            var establoActual = await _svc.ObtenerPorIdAsync(id);
+            if (establoActual is not null)
+                vm.Codigo = establoActual.Codigo;
+
             await _svc.CargarSelectsAsync(vm);
             return View(vm);
         }
-        await _svc.EditarAsync(id, vm);
-        TempData["Exito"] = "Establo actualizado exitosamente.";
-        return RedirectToAction(nameof(Index));
+        try
+        {
+            await _svc.EditarAsync(id, vm);
+            TempData["Exito"] = "Establo actualizado exitosamente.";
+            return RedirectToAction(nameof(Index));
+        }
+        catch (InvalidOperationException ex)
+        {
+            ModelState.AddModelError(string.Empty, ex.Message);
+            await _svc.CargarSelectsAsync(vm);
+            return View(vm);
+        }
     }
 }
