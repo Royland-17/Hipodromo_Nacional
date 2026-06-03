@@ -51,44 +51,49 @@
                         <!-- Inscripciones disponibles -->
                         <div class="col-12">
                             <label class="form-label-custom">Inscripciones a Facturar *</label>
-                            @if (!Model.InscripcionesDisponibles.Any())
-                            {
-                                <div style="color:var(--text-muted);font-size:.85rem;padding:12px;border:1px solid var(--border);border-radius:8px">
-                                    No hay inscripciones disponibles para facturar.
-                                </div>
-                            }
-                            else
-                            {
-                                <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;max-height:300px;overflow-y:auto">
-                                    <table class="table-hipodromo" style="margin:0">
-                                        <thead>
-                                            <tr>
-                                                <th style="width:40px"></th>
-                                                <th>Evento</th>
-                                                <th>Caballo</th>
-                                                <th>Fecha Inscripción</th>
-                                                <th>Precio</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach (var ins in Model.InscripcionesDisponibles)
-                                            {
-                                                <tr style="cursor:pointer" onclick="this.querySelector('input').click()">
-                                                    <td>
-                                                        <input type="checkbox" name="InscripcionesSeleccionadas" value="@ins.IdInscripcion"
-                                                            data-propietario-id="@ins.IdPropietario"
-                                                               style="accent-color:var(--gold);width:16px;height:16px" />
-                                                    </td>
-                                                    <td style="font-size:.85rem">@ins.Evento</td>
-                                                    <td style="font-weight:500">@ins.Caballo</td>
-                                                    <td style="font-size:.82rem;color:var(--text-muted)">@(ins.FechaInscripcion?.ToString("dd/MM/yyyy") ?? "—")</td>
-                                                    <td style="color:var(--gold)">₡@ins.PrecioUnitario.ToString("N2")</td>
+                            <div id="inscripcionesContainer">
+                                @if (!Model.InscripcionesDisponibles.Any())
+                                {
+                                    <div id="sinInscripciones" style="color:var(--text-muted);font-size:.85rem;padding:12px;border:1px solid var(--border);border-radius:8px">
+                                        Selecciona un propietario para ver sus inscripciones disponibles.
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div id="sinInscripciones" style="color:var(--text-muted);font-size:.85rem;padding:12px;border:1px solid var(--border);border-radius:8px;display:none">
+                                        No hay inscripciones disponibles para este propietario.
+                                    </div>
+                                    <div id="tablaInscripciones" style="border:1px solid var(--border);border-radius:8px;overflow:hidden;max-height:300px;overflow-y:auto">
+                                        <table class="table-hipodromo" style="margin:0">
+                                            <thead>
+                                                <tr>
+                                                    <th style="width:40px"></th>
+                                                    <th>Evento</th>
+                                                    <th>Caballo</th>
+                                                    <th>Fecha Inscripción</th>
+                                                    <th>Precio</th>
                                                 </tr>
-                                            }
-                                        </tbody>
-                                    </table>
-                                </div>
-                            }
+                                            </thead>
+                                            <tbody id="inscripcionesBody">
+                                                @foreach (var ins in Model.InscripcionesDisponibles)
+                                                {
+                                                    <tr class="fila-inscripcion" data-propietario-id="@ins.IdPropietario" style="cursor:pointer;display:none" onclick="this.querySelector('input').click()">
+                                                        <td>
+                                                            <input type="checkbox" name="InscripcionesSeleccionadas" value="@ins.IdInscripcion"
+                                                                data-propietario-id="@ins.IdPropietario"
+                                                                   style="accent-color:var(--gold);width:16px;height:16px" />
+                                                        </td>
+                                                        <td style="font-size:.85rem">@ins.Evento</td>
+                                                        <td style="font-weight:500">@ins.Caballo</td>
+                                                        <td style="font-size:.82rem;color:var(--text-muted)">@(ins.FechaInscripcion?.ToString("dd/MM/yyyy") ?? "—")</td>
+                                                        <td style="color:var(--gold)">₡@ins.PrecioUnitario.ToString("N2")</td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                }
+                            </div>
                         </div>
 
                         <div class="col-12 d-flex justify-content-end gap-3 pt-2">
@@ -109,46 +114,38 @@
     <script>
         (() => {
             const propietarioSelect = document.getElementById('propietarioSelect');
-            const checkboxes = Array.from(document.querySelectorAll('input[name="InscripcionesSeleccionadas"]'));
+            const sinInscripciones  = document.getElementById('sinInscripciones');
+            const tablaInscripciones = document.getElementById('tablaInscripciones');
+            const filas = Array.from(document.querySelectorAll('.fila-inscripcion'));
 
-            if (!propietarioSelect || checkboxes.length === 0) {
-                return;
-            }
+            if (!propietarioSelect) return;
 
-            function actualizarPropietarioDesdeSeleccion() {
-                const seleccionados = checkboxes.filter(cb => cb.checked);
-                const propietarios = [...new Set(seleccionados.map(cb => cb.dataset.propietarioId).filter(Boolean))];
+            function filtrarInscripciones() {
+                const idSeleccionado = propietarioSelect.value;
 
-                if (propietarios.length === 0) {
-                    propietarioSelect.disabled = false;
-                    return;
-                }
-
-                const propietarioUnico = propietarios[0];
-                propietarioSelect.value = propietarioUnico;
-                propietarioSelect.disabled = true;
-            }
-
-            checkboxes.forEach(cb => {
-                cb.addEventListener('change', () => {
-                    if (cb.checked) {
-                        const seleccionados = checkboxes.filter(x => x.checked && x !== cb);
-                        const propietarioActual = seleccionados.length > 0
-                            ? seleccionados[0].dataset.propietarioId
-                            : null;
-
-                        if (propietarioActual && cb.dataset.propietarioId !== propietarioActual) {
-                            cb.checked = false;
-                            alert('Solo puedes seleccionar inscripciones de un mismo propietario por factura.');
-                            return;
-                        }
-                    }
-
-                    actualizarPropietarioDesdeSeleccion();
+                // desmarcar checkboxes ocultos
+                filas.forEach(fila => {
+                    const visible = fila.dataset.propietarioId === idSeleccionado;
+                    fila.style.display = visible ? '' : 'none';
+                    if (!visible) fila.querySelector('input[type="checkbox"]').checked = false;
                 });
-            });
 
-            actualizarPropietarioDesdeSeleccion();
+                const hayFilas = filas.some(f => f.dataset.propietarioId === idSeleccionado);
+
+                if (!idSeleccionado) {
+                    if (sinInscripciones)  { sinInscripciones.style.display = ''; sinInscripciones.textContent = 'Selecciona un propietario para ver sus inscripciones disponibles.'; }
+                    if (tablaInscripciones) tablaInscripciones.style.display = 'none';
+                } else if (!hayFilas) {
+                    if (sinInscripciones)  { sinInscripciones.style.display = ''; sinInscripciones.textContent = 'No hay inscripciones disponibles para este propietario.'; }
+                    if (tablaInscripciones) tablaInscripciones.style.display = 'none';
+                } else {
+                    if (sinInscripciones)  sinInscripciones.style.display = 'none';
+                    if (tablaInscripciones) tablaInscripciones.style.display = '';
+                }
+            }
+
+            propietarioSelect.addEventListener('change', filtrarInscripciones);
+            filtrarInscripciones();
         })();
     </script>
 }

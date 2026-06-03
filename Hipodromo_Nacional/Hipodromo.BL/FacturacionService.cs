@@ -142,11 +142,13 @@ public class FacturacionService
             })
             .ToListAsync();
 
-        vm.Propietarios = vm.InscripcionesDisponibles
-            .GroupBy(i => new { i.IdPropietario, i.Propietario })
-            .Select(g => new SelectListItem(g.Key.Propietario, g.Key.IdPropietario.ToString()))
-            .OrderBy(p => p.Text)
-            .ToList();
+        vm.Propietarios = await _ctx.Propietarios
+            .Include(p => p.IdUsuarioNavigation)
+            .OrderBy(p => p.IdUsuarioNavigation.Nombre)
+            .Select(p => new SelectListItem(
+                p.IdUsuarioNavigation.Nombre + " " + p.IdUsuarioNavigation.Apellido1,
+                p.IdPropietario.ToString()))
+            .ToListAsync();
     }
 
     public async Task CrearAsync(CrearFacturaViewModel vm)

@@ -135,13 +135,23 @@
             <i class="fas fa-bars"></i>
         </button>
         <div class="topbar-title">@(ViewData["Title"] ?? "Dashboard")</div>
-        <div class="topbar-right d-flex align-items-center gap-3">
-            <span class="topbar-badge"><i class="fas fa-circle-dot text-success me-1" style="font-size:.65rem"></i> Conectado a la base de datos </span>
-            <span class="text-muted small">@nombre</span>
-            <form asp-controller="Auth" asp-action="Logout" method="post" class="m-0">
-                @Html.AntiForgeryToken()
-                <button type="submit" class="btn btn-sm btn-outline-secondary">Cerrar sesión</button>
-            </form>
+        <div class="topbar-right">
+            <div class="topbar-user-card">
+                <div class="topbar-user-info">
+                    <i class="fas fa-user-circle topbar-user-icon"></i>
+                    <span class="topbar-user-name">@nombre</span>
+                </div>
+                <form asp-controller="Auth" asp-action="Logout" method="post" class="m-0">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn-logout">
+                        <i class="fas fa-right-from-bracket"></i>
+                        Cerrar sesión
+                    </button>
+                </form>
+            </div>
+            <div class="db-status-badge">
+                <i class="fas fa-circle"></i> Conectado a la base de datos
+            </div>
         </div>
     </header>
 
