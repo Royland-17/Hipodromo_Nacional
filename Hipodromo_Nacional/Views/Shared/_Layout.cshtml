@@ -58,7 +58,11 @@
             <i class="fas fa-link"></i>
             <span>Asignaciones</span>
         </a>
-
+<div class="nav-section-label mt-2">CARRERAS</div>
+<a href="@Url.Action("Index","Carreras")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Carreras" ? "active" : "")">
+    <i class="fas fa-flag-checkered"></i>
+    <span>Gestión de Carreras</span>
+</a>
         <div class="nav-section-label mt-2">ALIMENTACION</div>
         <a href="@Url.Action("Index","Suministros")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Suministros" ? "active" : "")">
             <i class="fas fa-boxes-stacked"></i>
